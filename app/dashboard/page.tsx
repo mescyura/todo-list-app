@@ -84,7 +84,7 @@ export default function DashboardPage() {
 				<div className='grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 my-4 sm:my-8'>
 					<Card>
 						<CardContent className='p-4 sm:p-6'>
-							<div className='flex items-center justify-between'>
+							<div className='flex items-center justify-between gap-2'>
 								<div>
 									<p className='text-sm sm:text-base text-gray-500'>
 										Total Boards
@@ -101,7 +101,7 @@ export default function DashboardPage() {
 					</Card>
 					<Card>
 						<CardContent className='p-4 sm:p-6'>
-							<div className='flex items-center justify-between'>
+							<div className='flex items-center justify-between gap-2'>
 								<div>
 									<p className='text-sm sm:text-base text-gray-500'>
 										Active Projects
@@ -118,7 +118,7 @@ export default function DashboardPage() {
 					</Card>
 					<Card>
 						<CardContent className='p-4 sm:p-6'>
-							<div className='flex items-center justify-between'>
+							<div className='flex items-center justify-between gap-2'>
 								<div>
 									<p className='text-sm sm:text-base text-gray-500'>
 										Recent Activity
@@ -142,7 +142,7 @@ export default function DashboardPage() {
 					</Card>
 					<Card>
 						<CardContent className='p-4 sm:p-6'>
-							<div className='flex items-center justify-between'>
+							<div className='flex items-center justify-between gap-2'>
 								<div>
 									<p className='text-sm sm:text-base text-gray-500'>
 										// TODO LATER
