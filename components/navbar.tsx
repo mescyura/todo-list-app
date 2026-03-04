@@ -13,8 +13,6 @@ export default function Navbar() {
 	const isDashboardPage = pathname === '/dashboard';
 	const isBoardPage = pathname === '/boards/[id]';
 
-	console.log(user);
-
 	if (isDashboardPage) {
 		return (
 			<header className='border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50'>
