@@ -31,7 +31,7 @@ export default function DashboardPage() {
 	const handleCreateBoard = async () => {
 		await createBoard({
 			title: 'New Board',
-			description: 'This is a new board',
+			description: 'Add a description for your board',
 			color: 'bg-blue-500',
 		});
 		console.log('Create Board');

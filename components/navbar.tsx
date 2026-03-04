@@ -6,12 +6,16 @@ import { Button } from './ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function Navbar() {
+interface NavbarProps {
+	boardTitle?: string;
+	onEditBoardTitle?: () => void;
+}
+export default function Navbar({ boardTitle, onEditBoardTitle }: NavbarProps) {
 	const { isSignedIn, user } = useUser();
 	const pathname = usePathname();
 
 	const isDashboardPage = pathname === '/dashboard';
-	const isBoardPage = pathname === '/boards/[id]';
+	const isBoardPage = pathname.startsWith('/boards/');
 
 	if (isDashboardPage) {
 		return (
@@ -29,6 +33,10 @@ export default function Navbar() {
 				</div>
 			</header>
 		);
+	}
+
+	if (isBoardPage) {
+		return <></>;
 	}
 
 	return (
