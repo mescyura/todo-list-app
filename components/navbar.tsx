@@ -1,17 +1,32 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, Codepen, MoreHorizontal } from 'lucide-react';
+import {
+	ArrowLeft,
+	ArrowRight,
+	Codepen,
+	Filter,
+	MoreHorizontal,
+} from 'lucide-react';
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 import { Button } from './ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Badge } from './ui/badge';
 
 interface NavbarProps {
 	boardTitle?: string;
 	boardColor?: string;
 	onEditBoard?: () => void;
+	onFilterClick?: () => void;
+	filterCount?: number;
 }
-export default function Navbar({ boardTitle, boardColor, onEditBoard }: NavbarProps) {
+export default function Navbar({
+	boardTitle,
+	boardColor,
+	onEditBoard,
+	onFilterClick,
+	filterCount = 0,
+}: NavbarProps) {
 	const { isSignedIn, user } = useUser();
 	const pathname = usePathname();
 
@@ -47,13 +62,15 @@ export default function Navbar({ boardTitle, boardColor, onEditBoard }: NavbarPr
 								className='flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base text-gray-400 hover:text-gray-600 shrink-0 transition-colors duration-200 '
 							>
 								<ArrowLeft className='h-4 w-4 sm:h-5 sm:w-5' />
-								<span className='hidden sm:inline-block mr-0'>Back to Dashboard</span>
+								<span className='hidden sm:inline-block mr-0'>
+									Back to Dashboard
+								</span>
 								<span className='sm:hidden'>Back</span>
 							</Link>
 							<div className='h-4 sm:h-5 w-px bg-gray-200' />
 							<div className='flex items-center space-x-2'>
 								<Codepen className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
-								<span className='text-md font-semibold text-gray-700 truncate'>
+								<span className='text-md font-semibold text-gray-700 truncate max-w-[80px] sm:max-w-[150px] md:max-w-[400px]'>
 									{boardTitle}
 								</span>
 								{onEditBoard && (
@@ -66,6 +83,29 @@ export default function Navbar({ boardTitle, boardColor, onEditBoard }: NavbarPr
 										<MoreHorizontal />
 									</Button>
 								)}
+							</div>
+						</div>
+						<div className='flex items-center space-x-2 sm:space-x-4 shrink-0'>
+							{onFilterClick && (
+								<Button
+									variant='outline'
+									size='sm'
+									className={`text-xs sm:text-sm cursor-pointer ${
+										filterCount > 0 ? 'bg-gray-200 text-gray-700 border-gray-300' : ''
+									}`}
+									onClick={onFilterClick}
+								>
+									<Filter className='h-3 w-3 sm:h-4 sm:w-4' />{' '}
+									<span className='hidden sm:inline'>Filter</span>{' '}
+									{filterCount > 0 && (
+										<Badge variant={'secondary'} className='text-xs text-gray-700 border-gray-300'>
+											{filterCount}
+										</Badge>
+									)}
+								</Button>
+							)}
+							<div className='flex items-center space-x-2 sm:space-x-4'>
+								<UserButton />
 							</div>
 						</div>
 					</div>
