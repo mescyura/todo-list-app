@@ -39,7 +39,7 @@ function Column({
 }: {
 	column: ColumnWithTasks;
 	children?: React.ReactNode;
-	onCreateTask?: (taskData: Task) => Promise<void>;
+	onCreateTask?: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
 	onEditColumn?: (column: ColumnWithTasks) => void;
 }) {
 	return (
@@ -58,7 +58,91 @@ function Column({
 						</Button>
 					</div>
 				</div>
-				<div className='p-3 sm:p-4'>{children}</div>
+				<div className='p-3 sm:p-4'>
+					{children}
+					<Dialog>
+						<DialogTrigger asChild>
+							<Button variant="ghost" className='cursor-pointer w-full mt-3 text-gray-500 hover:text-gray-700' size='sm'>
+								{' '}
+								<PlusIcon /> Add Task
+							</Button>
+						</DialogTrigger>
+
+						<DialogContent className='w-[95vw] max-w-[425px] mx-auto'>
+							<DialogHeader>
+								<DialogTitle className='text-2xl font-bold'>
+									Create new task
+								</DialogTitle>
+								<p className='text-sm text-gray-500'>
+									Add a new task to the board
+								</p>
+							</DialogHeader>
+							<form className='space-y-2' onSubmit={onCreateTask}>
+								<div className='space-y-2'>
+									<Label htmlFor='title'>Title *</Label>
+									<Input
+										className='text-sm'
+										type='text'
+										name='title'
+										id='title'
+										required
+										placeholder='Enter task title..'
+									/>
+								</div>
+								<div className='space-y-2'>
+									<Label htmlFor='description'>Description</Label>
+									<Textarea
+										className='text-sm'
+										name='description'
+										id='description'
+										placeholder='Enter task description..'
+										rows={3}
+									/>
+								</div>
+								{/* <div className='space-y-2'>
+									<Label htmlFor='assignee'>Assignee</Label>
+									<Input
+										className='text-sm'
+										type='text'
+										name='assignee'
+										id='assignee'
+										// required
+										placeholder='Enter assignee name..'
+									/>
+								</div> */}
+								<div className='space-y-2'>
+									<Label htmlFor='assignee'>Priority</Label>
+									<Select name='priority' defaultValue='medium'>
+										<SelectTrigger className='w-full'>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{['low', 'medium', 'high'].map(priority => (
+												<SelectItem key={priority} value={priority}>
+													{priority.charAt(0).toUpperCase() + priority.slice(1)}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								<div className='space-y-2'>
+									<Label htmlFor='dueDate'>Due Date</Label>
+									<Input
+										type='date'
+										name='dueDate'
+										id='dueDate'
+										className='text-sm'
+									/>
+								</div>
+								<div className='flex justify-end gap-2 pt-4'>
+									<Button type='submit' size='sm'>
+										Create Task
+									</Button>
+								</div>
+							</form>
+						</DialogContent>
+					</Dialog>
+				</div>
 			</div>
 		</div>
 	);
@@ -97,9 +181,7 @@ function TaskCard({ task }: { task: Task }) {
 								{task.assignee && (
 									<div className='flex items-center gap-1 text-xs text-gray-500'>
 										<UserIcon className='w-4 h-4' />
-										<span className='text-xs truncate'>
-											{task.assignee}
-										</span>
+										<span className='text-xs truncate'>{task.assignee}</span>
 									</div>
 								)}
 								{task.due_date && (
@@ -148,7 +230,7 @@ export default function BoardPage() {
 	async function createTask(taskData: {
 		title: string;
 		description?: string;
-		// assignee?: string;
+		assignee?: string;
 		due_date?: string;
 		priority: 'low' | 'medium' | 'high';
 	}) {
@@ -413,9 +495,6 @@ export default function BoardPage() {
 									/>
 								</div>
 								<div className='flex justify-end gap-2 pt-4'>
-									{/* <Button type='button' variant='outline' size='sm'>
-										Cancel
-									</Button> */}
 									<Button type='submit' size='sm'>
 										Create Task
 									</Button>
@@ -437,7 +516,7 @@ export default function BoardPage() {
 						<Column
 							key={column.id}
 							column={column}
-							// onCreateTask={handleCreateTask}
+							onCreateTask={handleCreateTask}
 							onEditColumn={() => {}}
 						>
 							<div className='space-y-3'>
