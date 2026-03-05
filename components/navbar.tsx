@@ -12,6 +12,7 @@ import { Button } from './ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Badge } from './ui/badge';
+import { useEffect, useState } from 'react';
 
 interface NavbarProps {
 	boardTitle?: string;
@@ -30,6 +31,12 @@ export default function Navbar({
 	const { isSignedIn, user } = useUser();
 	const pathname = usePathname();
 
+	const [hasMounted, setHasMounted] = useState(false);
+
+	useEffect(() => {
+		setHasMounted(true);
+	}, []);
+
 	const isDashboardPage = pathname === '/dashboard';
 	const isBoardPage = pathname.startsWith('/boards/');
 
@@ -44,7 +51,7 @@ export default function Navbar({
 						</span>
 					</div>
 					<div className='flex items-center space-x-2 sm:space-x-4'>
-						<UserButton />
+						{hasMounted && <UserButton />}
 					</div>
 				</div>
 			</header>
@@ -105,7 +112,7 @@ export default function Navbar({
 								</Button>
 							)}
 							<div className='flex items-center space-x-2 sm:space-x-4'>
-								<UserButton />
+								{hasMounted && <UserButton />}
 							</div>
 						</div>
 					</div>
@@ -135,7 +142,7 @@ export default function Navbar({
 								Welcome,
 								{user?.firstName ?? user?.emailAddresses[0].emailAddress}
 							</span>
-							<UserButton />
+							{hasMounted && <UserButton />}
 						</div>
 					) : (
 						<div className='flex items-center space-x-2'>

@@ -28,10 +28,28 @@ import {
 	PlusIcon,
 	UserIcon,
 } from 'lucide-react';
+import {
+	DndContext,
+	DragEndEvent,
+	DragOverEvent,
+	DragOverlay,
+	DragStartEvent,
+	PointerSensor,
+	rectIntersection,
+	useDroppable,
+	useSensor,
+	useSensors,
+} from '@dnd-kit/core';
+import {
+	SortableContext,
+	useSortable,
+	verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
-function Column({
+function DroppableColumn({
 	column,
 	children,
 	onCreateTask,
@@ -42,8 +60,10 @@ function Column({
 	onCreateTask?: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
 	onEditColumn?: (column: ColumnWithTasks) => void;
 }) {
+	const { setNodeRef } = useDroppable({ id: column.id });
+
 	return (
-		<div className='w-full lg:shrink-0 lg:w-80'>
+		<div ref={setNodeRef} className='w-full lg:shrink-0 lg:w-80'>
 			<div className='bg-white rounded-lg shadow-sm border'>
 				<div className='p-3 sm:p-4 border-b'>
 					<div className='flex items-center justify-between'>
@@ -62,7 +82,11 @@ function Column({
 					{children}
 					<Dialog>
 						<DialogTrigger asChild>
-							<Button variant="ghost" className='cursor-pointer w-full mt-3 text-gray-500 hover:text-gray-700' size='sm'>
+							<Button
+								variant='ghost'
+								className='cursor-pointer w-full mt-3 text-gray-500 hover:text-gray-700'
+								size='sm'
+							>
 								{' '}
 								<PlusIcon /> Add Task
 							</Button>
@@ -148,7 +172,22 @@ function Column({
 	);
 }
 
-function TaskCard({ task }: { task: Task }) {
+function SortableTaskCard({ task }: { task: Task }) {
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		transition,
+		transform,
+		isDragging,
+	} = useSortable({ id: task.id });
+
+	const styles = {
+		transform: CSS.Transform.toString(transform),
+		transition,
+		opacity: isDragging ? 0.5 : 1,
+	};
+
 	function getPriorityColor(priority: 'low' | 'medium' | 'high') {
 		switch (priority) {
 			case 'low':
@@ -163,8 +202,8 @@ function TaskCard({ task }: { task: Task }) {
 	}
 
 	return (
-		<div>
-			<Card className='cursor-pointer hover:shadow-md transition-shadow duration-200'>
+		<div ref={setNodeRef} style={styles} {...attributes} {...listeners}>
+			<Card className='cursor-pointer hover:shadow-md transition-shadow'>
 				<CardContent className='p-3 sm:p-4'>
 					<div className='space-y-2 sm:space-y-3'>
 						<div className='flex items-start justify-between'>
@@ -203,15 +242,90 @@ function TaskCard({ task }: { task: Task }) {
 	);
 }
 
+function TaskOverlay({ task }: { task: Task }) {
+	function getPriorityColor(priority: 'low' | 'medium' | 'high') {
+		switch (priority) {
+			case 'low':
+				return 'bg-green-500';
+			case 'medium':
+				return 'bg-yellow-500';
+			case 'high':
+				return 'bg-red-500';
+			default:
+				return 'bg-yellow-500';
+		}
+	}
+
+	return (
+		<Card className='cursor-pointer hover:shadow-md transition-shadow'>
+			<CardContent className='p-3 sm:p-4'>
+				<div className='space-y-2 sm:space-y-3'>
+					<div className='flex items-start justify-between'>
+						<h4 className='font-medium text-gray-900 text-md leading-tight flex-1 min-w-0 pr-2'>
+							{task.title}
+						</h4>
+					</div>
+					<p className='text-sm text-gray-500 line-clamp-2'>
+						{task.description || 'No description'}
+					</p>
+
+					<div className='flex items-center justify-between gap-2'>
+						<div className='flex items-center justify-between flex-wrap space-x-3 sm:space-x-4 sm:space-y-1 min-w-0'>
+							{task.assignee && (
+								<div className='flex items-center gap-1 text-xs text-gray-500'>
+									<UserIcon className='w-4 h-4' />
+									<span className='text-xs truncate'>{task.assignee}</span>
+								</div>
+							)}
+							{task.due_date && (
+								<div className='flex items-center gap-1 text-xs text-gray-500'>
+									<CalendarIcon className='w-4 h-4' />
+									<span className='text-xs truncate'>{task.due_date}</span>
+								</div>
+							)}
+						</div>
+						<div
+							className={`w-3 h-3 rounded-full shrink-0 
+										${getPriorityColor(task.priority)}`}
+						/>
+					</div>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
 export default function BoardPage() {
 	const { id } = useParams<{ id: string }>();
-	const { board, columns, isLoading, error, updateBoard, createRealTask } =
-		useBoard(id);
+	const {
+		board,
+		columns,
+		isLoading,
+		error,
+		setColumns,
+		updateBoard,
+		createRealTask,
+		moveTask,
+	} = useBoard(id);
 	const [isEditing, setIsEditing] = useState(false);
 	const [newTitle, setNewTitle] = useState('');
 	const [newColor, setNewColor] = useState('');
-
 	const [isFilterOpen, setFilterOpen] = useState(false);
+	const [activeTask, setActiveTask] = useState<Task | null>(null);
+	const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
+	const [sourceColumnId, setSourceColumnId] = useState<string | null>(null);
+	const [dropTarget, setDropTarget] = useState<{
+		columnId: string;
+		index: number;
+	} | null>(null);
+
+	const sensors = useSensors(
+		useSensor(PointerSensor, {
+			activationConstraint: {
+				distance: 8,
+			},
+		})
+	);
 
 	async function handleUpdateBoard(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -265,6 +379,155 @@ export default function BoardPage() {
 				trigger.click();
 			}
 		}
+	}
+
+	function handleDragStart(event: DragStartEvent) {
+		const taskId = event.active.id as string;
+		const task = columns
+			.flatMap(column => column.tasks)
+			.find(task => task.id === taskId);
+
+		if (task) {
+			setActiveTask(task);
+			setDropTarget(null);
+
+			const sourceColumn = columns.find(col =>
+				col.tasks.some(t => t.id === taskId)
+			);
+			if (sourceColumn) {
+				setSourceColumnId(sourceColumn.id);
+				setActiveColumnId(sourceColumn.id);
+			}
+		}
+	}
+
+	function handleDragOver(event: DragOverEvent) {
+		const { active, over } = event;
+		if (!over) {
+			setDropTarget(null);
+			return;
+		}
+
+		const activeId = active.id as string;
+		const overId = over.id as string;
+
+		const sourceColumn = columns.find(col =>
+			col.tasks.some(task => task.id === activeId)
+		);
+
+		const targetColumn =
+			columns.find(col => col.tasks.some(task => task.id === overId)) ||
+			columns.find(col => col.id === overId);
+
+		if (!sourceColumn || !targetColumn) return;
+
+		setActiveColumnId(targetColumn.id);
+
+		// Trello-like: show drop placeholder only when dragging to another column, at exact index
+		if (sourceColumn.id !== targetColumn.id) {
+			const overTask = targetColumn.tasks.find(t => t.id === overId);
+			const index =
+				overTask !== undefined
+					? targetColumn.tasks.findIndex(t => t.id === overId)
+					: 0;
+			setDropTarget({ columnId: targetColumn.id, index });
+		} else {
+			setDropTarget(null);
+		}
+	}
+
+	async function handleDragEnd(event: DragEndEvent) {
+		const { active, over } = event;
+		if (!over) {
+			setActiveTask(null);
+			setActiveColumnId(null);
+			setSourceColumnId(null);
+			setDropTarget(null);
+			return;
+		}
+
+		const taskId = active.id as string;
+		const overId = over.id as string;
+
+		const sourceColumn = columns.find(col =>
+			col.tasks.some(task => task.id === taskId)
+		);
+
+		// If dropped on column body/header
+		let targetColumn = columns.find(col => col.id === overId);
+
+		// If dropped on another task
+		if (!targetColumn) {
+			targetColumn = columns.find(col =>
+				col.tasks.some(task => task.id === overId)
+			);
+		}
+
+		if (sourceColumn && targetColumn) {
+			const oldIndex = sourceColumn.tasks.findIndex(task => task.id === taskId);
+			const newIndex = targetColumn.tasks.findIndex(task => task.id === overId);
+
+			const isSameColumn = sourceColumn.id === targetColumn.id;
+
+			// Trello-like:
+			// - в межах однієї колонки одразу оновлюємо UI локально (optimistic),
+			//   а потім синхронізуємо порядок з бекендом
+			// - при переносі в іншу колонку також робимо optimistic оновлення
+			if (isSameColumn) {
+				if (newIndex !== -1 && oldIndex !== newIndex) {
+					setColumns((prev: ColumnWithTasks[]) => {
+						const newColumns = [...prev];
+						const column = newColumns.find(col => col.id === sourceColumn.id);
+						if (!column) return prev;
+
+						const tasks = [...column.tasks];
+						const [removed] = tasks.splice(oldIndex, 1);
+						tasks.splice(newIndex, 0, removed);
+						column.tasks = tasks;
+
+						return newColumns;
+					});
+
+					await moveTask(taskId, targetColumn.id, newIndex);
+				}
+			} else {
+				const targetOrder =
+					dropTarget?.columnId === targetColumn.id ? dropTarget.index : 0;
+
+				// Optimistic оновлення UI між колонками
+				setColumns((prev: ColumnWithTasks[]) => {
+					const newColumns = prev.map(col => ({
+						...col,
+						tasks: [...col.tasks],
+					}));
+
+					const fromCol = newColumns.find(col => col.id === sourceColumn.id);
+					const toCol = newColumns.find(col => col.id === targetColumn!.id);
+
+					if (!fromCol || !toCol) return prev;
+
+					const fromIndex = fromCol.tasks.findIndex(t => t.id === taskId);
+					if (fromIndex === -1) return prev;
+
+					const [movedTask] = fromCol.tasks.splice(fromIndex, 1);
+					const insertIndex = Math.min(
+						Math.max(targetOrder, 0),
+						toCol.tasks.length
+					);
+					toCol.tasks.splice(insertIndex, 0, movedTask);
+
+					return newColumns;
+				});
+
+				// Синхронізація з бекендом
+				await moveTask(taskId, targetColumn.id, targetOrder);
+			}
+		}
+
+		setActiveTask(null);
+		setActiveColumnId(null);
+		setSourceColumnId(null);
+		setDropTarget(null);
 	}
 
 	return (
@@ -505,28 +768,66 @@ export default function BoardPage() {
 				</div>
 
 				{/* Board Columns */}
-				<div
-					className='flex flex-col lg:flex-row lg:space-x-6 lg:overflow-x-auto 
+				<DndContext
+					sensors={sensors}
+					collisionDetection={rectIntersection}
+					onDragStart={handleDragStart}
+					onDragOver={handleDragOver}
+					onDragEnd={handleDragEnd}
+				>
+					<DragOverlay>
+						{activeTask && <TaskOverlay task={activeTask} />}
+					</DragOverlay>
+
+					<div
+						className='min-h-[calc(100vh-200px)] flex flex-col lg:flex-row lg:space-x-6 lg:overflow-x-auto 
 					lg:pb-6 lg:px-2 lg:-mx-2 lg:[&::-webkit-scrollbar]:h-2 
 					lg:[&::-webkit-scrollbar-track]:bg-gray-100 
 					lg:[&::-webkit-scrollbar-thumb]:bg-gray-300 lg:[&::-webkit-scrollbar-thumb]:rounded-full 
 					space-y-4 lg:space-y-0'
-				>
-					{columns.map(column => (
-						<Column
-							key={column.id}
-							column={column}
-							onCreateTask={handleCreateTask}
-							onEditColumn={() => {}}
-						>
-							<div className='space-y-3'>
-								{column.tasks.map(task => (
-									<TaskCard key={task.id} task={task} />
-								))}
-							</div>
-						</Column>
-					))}
-				</div>
+					>
+						{columns.map(column => (
+							<DroppableColumn
+								key={column.id}
+								column={column}
+								onCreateTask={handleCreateTask}
+								onEditColumn={() => {}}
+							>
+								<SortableContext
+									items={column.tasks.map(task => task.id)}
+									strategy={verticalListSortingStrategy}
+								>
+									<div className='space-y-3'>
+										{/* Trello-like: drop indicator only in other column, at exact index */}
+										{dropTarget &&
+											dropTarget.columnId === column.id &&
+											sourceColumnId !== column.id &&
+											dropTarget.index === 0 && (
+												<div
+													className='h-10 w-full rounded-xl bg-gray-50 border opacity-80'
+													aria-hidden
+												/>
+											)}
+										{column.tasks.map((task, i) => (
+											<Fragment key={task.id}>
+												{dropTarget &&
+													dropTarget.columnId === column.id &&
+													sourceColumnId !== column.id &&
+													dropTarget.index === i + 1 && (
+														<div
+															className='h-10 w-full rounded-xl bg-gray-50 border opacity-80'
+															aria-hidden
+														/>
+													)}
+												<SortableTaskCard task={task} />
+											</Fragment>
+										))}
+									</div>
+								</SortableContext>
+							</DroppableColumn>
+						))}
+					</div>
+				</DndContext>
 			</main>
 		</div>
 	);
