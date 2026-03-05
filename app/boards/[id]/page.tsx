@@ -57,7 +57,10 @@ function DroppableColumn({
 }: {
 	column: ColumnWithTasks;
 	children?: React.ReactNode;
-	onCreateTask?: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+	onCreateTask?: (
+		e: React.FormEvent<HTMLFormElement>,
+		columnId: string
+	) => Promise<void>;
 	onEditColumn?: (column: ColumnWithTasks) => void;
 }) {
 	const { setNodeRef } = useDroppable({ id: column.id });
@@ -101,7 +104,10 @@ function DroppableColumn({
 									Add a new task to the board
 								</p>
 							</DialogHeader>
-							<form className='space-y-2' onSubmit={onCreateTask}>
+							<form
+								className='space-y-2'
+								onSubmit={e => onCreateTask?.(e, column.id)}
+							>
 								<div className='space-y-2'>
 									<Label htmlFor='title'>Title *</Label>
 									<Input
@@ -341,14 +347,19 @@ export default function BoardPage() {
 		}
 	}
 
-	async function createTask(taskData: {
-		title: string;
-		description?: string;
-		assignee?: string;
-		due_date?: string;
-		priority: 'low' | 'medium' | 'high';
-	}) {
-		const targetColumn = columns[0];
+	async function createTask(
+		taskData: {
+			title: string;
+			description?: string;
+			assignee?: string;
+			due_date?: string;
+			priority: 'low' | 'medium' | 'high';
+		},
+		columnId?: string
+	) {
+		const targetColumn = columnId
+			? columns.find(col => col.id === columnId)
+			: columns[0];
 		if (!targetColumn) {
 			throw new Error('No column found');
 		}
@@ -356,21 +367,24 @@ export default function BoardPage() {
 		await createRealTask(targetColumn.id, taskData);
 	}
 
-	async function handleCreateTask(e: React.FormEvent<HTMLFormElement>) {
+	async function handleCreateTask(
+		e: React.FormEvent<HTMLFormElement>,
+		columnId?: string
+	) {
 		e.preventDefault();
 		const formData = new FormData(e.target as HTMLFormElement);
 		console.log(formData.get('dueDate'));
 		const taskData = {
 			title: formData.get('title') as string,
 			description: (formData.get('description') as string) || undefined,
-			// assignee: (formData.get('assignee') as string) || undefined,
+			assignee: (formData.get('assignee') as string) || undefined,
 			due_date: (formData.get('dueDate') as string) || undefined,
 			priority:
 				(formData.get('priority') as 'low' | 'medium' | 'high') || 'medium',
 		};
 
 		if (taskData.title.trim()) {
-			await createTask(taskData);
+			await createTask(taskData, columnId);
 
 			const trigger = document.querySelector(
 				'[data-state="open"]'
@@ -700,7 +714,10 @@ export default function BoardPage() {
 									Add a new task to the board
 								</p>
 							</DialogHeader>
-							<form className='space-y-2' onSubmit={handleCreateTask}>
+							<form
+								className='space-y-2'
+								onSubmit={e => handleCreateTask(e)}
+							>
 								<div className='space-y-2'>
 									<Label htmlFor='title'>Title *</Label>
 									<Input
