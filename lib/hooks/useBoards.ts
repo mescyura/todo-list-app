@@ -1,8 +1,8 @@
 'use client';
 import { useUser } from '@clerk/nextjs';
 import { boardDataService, boardsService } from '../services';
-import { use, useEffect, useState } from 'react';
-import { Board } from '../supabase/models';
+import { useEffect, useState } from 'react';
+import { Board, Column } from '../supabase/models';
 import { useSupabase } from '../supabase/SupabaseProvider';
 
 export function useBoards() {
@@ -58,4 +58,54 @@ export function useBoards() {
 	}
 
 	return { createBoard, boards, isLoading, error };
+}
+
+export function useBoard(boardId: string) {
+	const { supabase } = useSupabase();
+	const [board, setBoard] = useState<Board | null>(null);
+	const [columns, setColumns] = useState<Column[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (boardId) {
+			loadBoard(boardId);
+		}
+	}, [boardId, supabase]);
+
+	async function loadBoard(boardId: string) {
+		if (!boardId) return;
+		try {
+			setIsLoading(true);
+			setError(null);
+			const data = await boardDataService.getBoardWithColumns(
+				supabase!,
+				boardId
+			);
+			setBoard(data.board);
+			setColumns(data.columns);
+		} catch (error) {
+			setError(error instanceof Error ? error.message : 'Failed to load board');
+		} finally {
+			setIsLoading(false);
+		}
+	}
+
+	async function updateBoard(boardId: string, boardData: Partial<Board>) {
+		try {
+			const updatedBoard = await boardsService.updateBoard(
+				supabase!,
+				boardId,
+				boardData
+			);
+			setBoard(updatedBoard);
+			return updatedBoard;
+		} catch (error) {
+			setError(
+				error instanceof Error ? error.message : 'Failed to update board'
+			);
+		}
+	}
+
+	return { board, columns, isLoading, error, updateBoard };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Codepen } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Codepen, MoreHorizontal } from 'lucide-react';
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 import { Button } from './ui/button';
 import Link from 'next/link';
@@ -8,9 +8,10 @@ import { usePathname } from 'next/navigation';
 
 interface NavbarProps {
 	boardTitle?: string;
-	onEditBoardTitle?: () => void;
+	boardColor?: string;
+	onEditBoard?: () => void;
 }
-export default function Navbar({ boardTitle, onEditBoardTitle }: NavbarProps) {
+export default function Navbar({ boardTitle, boardColor, onEditBoard }: NavbarProps) {
 	const { isSignedIn, user } = useUser();
 	const pathname = usePathname();
 
@@ -36,7 +37,41 @@ export default function Navbar({ boardTitle, onEditBoardTitle }: NavbarProps) {
 	}
 
 	if (isBoardPage) {
-		return <></>;
+		return (
+			<header className='border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50'>
+				<div className='container mx-auto px-4 py-3 sm:py-4'>
+					<div className='flex items-center justify-between'>
+						<div className='flex items-center space-x-2 min-w-0'>
+							<Link
+								href='/dashboard'
+								className='flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base text-gray-400 hover:text-gray-600 shrink-0 transition-colors duration-200 '
+							>
+								<ArrowLeft className='h-4 w-4 sm:h-5 sm:w-5' />
+								<span className='hidden sm:inline-block mr-0'>Back to Dashboard</span>
+								<span className='sm:hidden'>Back</span>
+							</Link>
+							<div className='h-4 sm:h-5 w-px bg-gray-200' />
+							<div className='flex items-center space-x-2'>
+								<Codepen className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
+								<span className='text-md font-semibold text-gray-700 truncate'>
+									{boardTitle}
+								</span>
+								{onEditBoard && (
+									<Button
+										variant='ghost'
+										size='sm'
+										className='h-7 w-7 p-0 shrink-0'
+										onClick={onEditBoard}
+									>
+										<MoreHorizontal />
+									</Button>
+								)}
+							</div>
+						</div>
+					</div>
+				</div>
+			</header>
+		);
 	}
 
 	return (

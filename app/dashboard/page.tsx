@@ -34,7 +34,6 @@ export default function DashboardPage() {
 			description: 'Add a description for your board',
 			color: 'bg-blue-500',
 		});
-		console.log('Create Board');
 	};
 
 	if (isLoading) {
