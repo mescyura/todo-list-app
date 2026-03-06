@@ -26,6 +26,7 @@ import {
 	CalendarIcon,
 	MoreHorizontalIcon,
 	PlusIcon,
+	TrashIcon,
 	UserIcon,
 } from 'lucide-react';
 import {
@@ -54,6 +55,7 @@ function DroppableColumn({
 	children,
 	onCreateTask,
 	onEditColumn,
+	onDeleteColumn,
 }: {
 	column: ColumnWithTasks;
 	children?: React.ReactNode;
@@ -61,7 +63,8 @@ function DroppableColumn({
 		e: React.FormEvent<HTMLFormElement>,
 		columnId: string
 	) => Promise<void>;
-	onEditColumn?: (column: ColumnWithTasks) => void;
+	onEditColumn: (column: ColumnWithTasks) => void;
+	onDeleteColumn: (column: ColumnWithTasks) => void;
 }) {
 	const { setNodeRef } = useDroppable({ id: column.id });
 
@@ -76,9 +79,24 @@ function DroppableColumn({
 								{column.tasks.length}
 							</Badge>
 						</div>
-						<Button variant='ghost' size='sm' className='cursor-pointer'>
-							<MoreHorizontalIcon />
-						</Button>
+						<div className='flex items-center'>
+							<Button
+								variant='ghost'
+								size='sm'
+								className='cursor-pointer'
+								onClick={() => onEditColumn(column)}
+							>
+								<MoreHorizontalIcon />
+							</Button>
+							<Button
+								variant='ghost'
+								size='sm'
+								className='cursor-pointer'
+								onClick={() => onDeleteColumn(column)}
+							>
+								<TrashIcon className='w-4 h-4' />
+							</Button>
+						</div>
 					</div>
 				</div>
 				<div className='p-3 sm:p-4'>
@@ -312,11 +330,25 @@ export default function BoardPage() {
 		updateBoard,
 		createRealTask,
 		moveTask,
+		createColumn,
+		updateColumn,
+		deleteColumn,
 	} = useBoard(id);
 	const [isEditing, setIsEditing] = useState(false);
 	const [newTitle, setNewTitle] = useState('');
 	const [newColor, setNewColor] = useState('');
 	const [isFilterOpen, setFilterOpen] = useState(false);
+	const [isCreatingColumn, setIsCreatingColumn] = useState(false);
+	const [isEditingColumn, setIsEditingColumn] = useState(false);
+	const [newColumnTitle, setNewColumnTitle] = useState('');
+	const [editingColumnTitle, setEditingColumnTitle] = useState('');
+	const [isDeletingColumn, setIsDeletingColumn] = useState(false);
+	const [editingColumn, setEditingColumn] = useState<ColumnWithTasks | null>(
+		null
+	);
+	const [deletingColumn, setDeletingColumn] = useState<ColumnWithTasks | null>(
+		null
+	);
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 	const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
 	const [sourceColumnId, setSourceColumnId] = useState<string | null>(null);
@@ -393,6 +425,44 @@ export default function BoardPage() {
 				trigger.click();
 			}
 		}
+	}
+
+	async function handleCreateColumn(e: React.FormEvent<HTMLFormElement>) {
+		e.preventDefault();
+		if (!newColumnTitle.trim()) return;
+		await createColumn(newColumnTitle.trim());
+		setNewColumnTitle('');
+		setIsCreatingColumn(false);
+	}
+
+	function handleEditColumn(column: ColumnWithTasks) {
+		setIsEditingColumn(true);
+		setEditingColumn(column);
+		setEditingColumnTitle(column.title);
+	}
+
+	function handleDeleteColumn(column: ColumnWithTasks) {
+		setIsDeletingColumn(true);
+		setDeletingColumn(column);
+	}
+
+	async function handleUpdateColumn(e: React.FormEvent) {
+		e.preventDefault();
+
+		if (!editingColumnTitle.trim() || !editingColumn) return;
+
+		await updateColumn(editingColumn.id, editingColumnTitle.trim());
+
+		setEditingColumnTitle('');
+		setIsEditingColumn(false);
+		setEditingColumn(null);
+	}
+
+	async function DeleteColumn() {
+		if (!deletingColumn) return;
+		await deleteColumn(deletingColumn.id);
+		setIsDeletingColumn(false);
+		setDeletingColumn(null);
 	}
 
 	function handleDragStart(event: DragStartEvent) {
@@ -545,115 +615,118 @@ export default function BoardPage() {
 	}
 
 	return (
-		<div className='min-h-screen bg-gray-50'>
-			<Navbar
-				boardTitle={board?.title}
-				onEditBoard={() => {
-					setNewTitle(board?.title ?? '');
-					setNewColor(board?.color ?? '');
-					setIsEditing(true);
-				}}
-				boardColor={board?.color}
-				//TODO: Implement filter click
-				onFilterClick={() => {
-					setFilterOpen(true);
-				}}
-				//TODO: Implement filter count
-				filterCount={2}
-			/>
-			<Dialog open={isEditing} onOpenChange={setIsEditing}>
-				<DialogContent className='w-[95vw] max-w-[425px] mx-auto'>
-					<DialogHeader>
-						<DialogTitle className='text-2xl font-bold'>Edit Board</DialogTitle>
-					</DialogHeader>
-					<form className='space-y-4' onSubmit={handleUpdateBoard}>
-						<div className='space-y-2'>
-							<Label htmlFor='boardTitle' className='text-sm font-semibold'>
-								Board Title
-							</Label>
-							<Input
-								className='text-sm'
-								id='boardTitle'
-								placeholder='Enter board title'
-								required
-								value={newTitle}
-								onChange={e => setNewTitle(e.target.value)}
-							/>
-						</div>
-						<div className='space-y-2'>
-							<Label htmlFor='boardColor' className='text-sm font-semibold'>
-								Board Color
-							</Label>
-							<div className='grid grid-cols-6 sm:grid-cols-4 gap-2 mt-4'>
-								{[
-									'bg-blue-500',
-									'bg-green-500',
-									'bg-yellow-500',
-									'bg-red-500',
-									'bg-purple-500',
-									'bg-pink-500',
-									'bg-indigo-500',
-									'bg-gray-500',
-									'bg-orange-500',
-									'bg-teal-500',
-									'bg-cyan-500',
-									'bg-emerald-500',
-								].map((color, key) => (
-									<button
-										type='button'
-										key={color}
-										className={`w-full h-6 rounded-full ${color} ${
-											newColor === color
-												? 'ring-2 ring-offset-2 ring-gray-700'
-												: ''
-										}`}
-										onClick={() => setNewColor(color)}
-									/>
-								))}
+		<>
+			<div className='min-h-screen bg-gray-50'>
+				<Navbar
+					boardTitle={board?.title}
+					onEditBoard={() => {
+						setNewTitle(board?.title ?? '');
+						setNewColor(board?.color ?? '');
+						setIsEditing(true);
+					}}
+					boardColor={board?.color}
+					//TODO: Implement filter click
+					onFilterClick={() => {
+						setFilterOpen(true);
+					}}
+					//TODO: Implement filter count
+					filterCount={2}
+				/>
+				<Dialog open={isEditing} onOpenChange={setIsEditing}>
+					<DialogContent className='w-[95vw] max-w-[425px] mx-auto'>
+						<DialogHeader>
+							<DialogTitle className='text-2xl font-bold'>
+								Edit Board
+							</DialogTitle>
+						</DialogHeader>
+						<form className='space-y-4' onSubmit={handleUpdateBoard}>
+							<div className='space-y-2'>
+								<Label htmlFor='boardTitle' className='text-sm font-semibold'>
+									Board Title
+								</Label>
+								<Input
+									className='text-sm'
+									id='boardTitle'
+									placeholder='Enter board title'
+									required
+									value={newTitle}
+									onChange={e => setNewTitle(e.target.value)}
+								/>
 							</div>
-						</div>
-						<div className='flex justify-end gap-2'>
-							<Button
-								type='button'
-								variant='outline'
-								size='sm'
-								onClick={() => setIsEditing(false)}
-							>
-								Cancel
-							</Button>
-							<Button type='submit' size='sm'>
-								Save Changes
-							</Button>
-						</div>
-					</form>
-				</DialogContent>
-			</Dialog>
+							<div className='space-y-2'>
+								<Label htmlFor='boardColor' className='text-sm font-semibold'>
+									Board Color
+								</Label>
+								<div className='grid grid-cols-6 sm:grid-cols-4 gap-2 mt-4'>
+									{[
+										'bg-blue-500',
+										'bg-green-500',
+										'bg-yellow-500',
+										'bg-red-500',
+										'bg-purple-500',
+										'bg-pink-500',
+										'bg-indigo-500',
+										'bg-gray-500',
+										'bg-orange-500',
+										'bg-teal-500',
+										'bg-cyan-500',
+										'bg-emerald-500',
+									].map((color, key) => (
+										<button
+											type='button'
+											key={color}
+											className={`w-full h-6 rounded-full ${color} ${
+												newColor === color
+													? 'ring-2 ring-offset-2 ring-gray-700'
+													: ''
+											}`}
+											onClick={() => setNewColor(color)}
+										/>
+									))}
+								</div>
+							</div>
+							<div className='flex justify-end gap-2'>
+								<Button
+									type='button'
+									variant='outline'
+									size='sm'
+									onClick={() => setIsEditing(false)}
+								>
+									Cancel
+								</Button>
+								<Button type='submit' size='sm'>
+									Save Changes
+								</Button>
+							</div>
+						</form>
+					</DialogContent>
+				</Dialog>
 
-			<Dialog open={isFilterOpen} onOpenChange={setFilterOpen}>
-				<DialogContent className='w-[95vw] max-w-[425px] mx-auto'>
-					<DialogHeader>
-						<DialogTitle className='text-2xl font-bold'>
-							Filter tasks
-						</DialogTitle>
-						<p className='text-sm text-gray-500'>
-							Filter tasks by priority, assignee or due date
-						</p>
-					</DialogHeader>
-					<div className='space-y-4'>
-						<div className='space-y-2'>
-							<Label htmlFor='priority' className='text-sm font-semibold'>
-								Priority
-							</Label>
-							<div className='flex gap-2'>
-								{['low', 'medium', 'high'].map(priority => (
-									<Button key={priority} variant={`outline`} size='sm'>
-										{priority.charAt(0).toUpperCase() + priority.slice(1)}
-									</Button>
-								))}
+				<Dialog open={isFilterOpen} onOpenChange={setFilterOpen}>
+					<DialogContent className='w-[95vw] max-w-[425px] mx-auto'>
+						<DialogHeader>
+							<DialogTitle className='text-2xl font-bold'>
+								Filter tasks
+							</DialogTitle>
+							<p className='text-sm text-gray-500'>
+								Filter tasks by priority, assignee or due date
+							</p>
+						</DialogHeader>
+						<div className='space-y-4'>
+							<div className='space-y-2'>
+								<Label htmlFor='priority' className='text-sm font-semibold'>
+									Priority
+								</Label>
+								<div className='flex gap-2'>
+									{['low', 'medium', 'high'].map(priority => (
+										<Button key={priority} variant={`outline`} size='sm'>
+											{priority.charAt(0).toUpperCase() + priority.slice(1)}
+										</Button>
+									))}
+								</div>
 							</div>
-						</div>
-						{/* // TODO: Implement assignee filter */}
-						{/* <div className='space-y-2'>
+							{/* // TODO: Implement assignee filter */}
+							{/* <div className='space-y-2'>
 							<Label htmlFor='priority' className='text-sm font-semibold'>
 								Assignee
 							</Label>
@@ -665,81 +738,78 @@ export default function BoardPage() {
 								))}
 							</div>
 						</div> */}
-						<div className='space-y-2'>
-							<Label htmlFor='priority' className='text-sm font-semibold'>
-								Due Date
-							</Label>
-							<Input type='date' id='dueDate' className='text-sm' />
+							<div className='space-y-2'>
+								<Label htmlFor='priority' className='text-sm font-semibold'>
+									Due Date
+								</Label>
+								<Input type='date' id='dueDate' className='text-sm' />
+							</div>
+							<div className='flex justify-end gap-2 pt-4'>
+								<Button type='button' variant='outline' size='sm'>
+									Clear Filters
+								</Button>
+								<Button
+									type='submit'
+									onClick={() => setFilterOpen(false)}
+									size='sm'
+								>
+									Apply Filters
+								</Button>
+							</div>
 						</div>
-						<div className='flex justify-end gap-2 pt-4'>
-							<Button type='button' variant='outline' size='sm'>
-								Clear Filters
-							</Button>
-							<Button
-								type='submit'
-								onClick={() => setFilterOpen(false)}
-								size='sm'
-							>
-								Apply Filters
-							</Button>
+					</DialogContent>
+				</Dialog>
+
+				{/* Board Content */}
+				<main className='container mx-auto px-2 sm:px-4 py-4 sm:py-6'>
+					<div className='flex items-center justify-between mb-6 space-y-4'>
+						<div className='flex flex-wrap items-center gap-4 sm:gap-6'>
+							<div className='text-sm text-gray-500'>
+								<span className='font-medium'>Total tasks: </span>
+								{columns.reduce((acc, column) => acc + column.tasks.length, 0)}
+							</div>
 						</div>
-					</div>
-				</DialogContent>
-			</Dialog>
 
-			{/* Board Content */}
-			<main className='container mx-auto px-2 sm:px-4 py-4 sm:py-6'>
-				<div className='flex items-center justify-between mb-6 space-y-4'>
-					<div className='flex flex-wrap items-center gap-4 sm:gap-6'>
-						<div className='text-sm text-gray-500'>
-							<span className='font-medium'>Total tasks: </span>
-							{columns.reduce((acc, column) => acc + column.tasks.length, 0)}
-						</div>
-					</div>
+						<Dialog>
+							<DialogTrigger asChild>
+								<Button size='sm'>
+									{' '}
+									<PlusIcon /> Add Task
+								</Button>
+							</DialogTrigger>
 
-					<Dialog>
-						<DialogTrigger asChild>
-							<Button size='sm'>
-								{' '}
-								<PlusIcon /> Add Task
-							</Button>
-						</DialogTrigger>
-
-						<DialogContent className='w-[95vw] max-w-[425px] mx-auto'>
-							<DialogHeader>
-								<DialogTitle className='text-2xl font-bold'>
-									Create new task
-								</DialogTitle>
-								<p className='text-sm text-gray-500'>
-									Add a new task to the board
-								</p>
-							</DialogHeader>
-							<form
-								className='space-y-2'
-								onSubmit={e => handleCreateTask(e)}
-							>
-								<div className='space-y-2'>
-									<Label htmlFor='title'>Title *</Label>
-									<Input
-										className='text-sm'
-										type='text'
-										name='title'
-										id='title'
-										required
-										placeholder='Enter task title..'
-									/>
-								</div>
-								<div className='space-y-2'>
-									<Label htmlFor='description'>Description</Label>
-									<Textarea
-										className='text-sm'
-										name='description'
-										id='description'
-										placeholder='Enter task description..'
-										rows={3}
-									/>
-								</div>
-								{/* <div className='space-y-2'>
+							<DialogContent className='w-[95vw] max-w-[425px] mx-auto'>
+								<DialogHeader>
+									<DialogTitle className='text-2xl font-bold'>
+										Create new task
+									</DialogTitle>
+									<p className='text-sm text-gray-500'>
+										Add a new task to the board
+									</p>
+								</DialogHeader>
+								<form className='space-y-2' onSubmit={e => handleCreateTask(e)}>
+									<div className='space-y-2'>
+										<Label htmlFor='title'>Title *</Label>
+										<Input
+											className='text-sm'
+											type='text'
+											name='title'
+											id='title'
+											required
+											placeholder='Enter task title..'
+										/>
+									</div>
+									<div className='space-y-2'>
+										<Label htmlFor='description'>Description</Label>
+										<Textarea
+											className='text-sm'
+											name='description'
+											id='description'
+											placeholder='Enter task description..'
+											rows={3}
+										/>
+									</div>
+									{/* <div className='space-y-2'>
 									<Label htmlFor='assignee'>Assignee</Label>
 									<Input
 										className='text-sm'
@@ -750,102 +820,240 @@ export default function BoardPage() {
 										placeholder='Enter assignee name..'
 									/>
 								</div> */}
-								<div className='space-y-2'>
-									<Label htmlFor='assignee'>Priority</Label>
-									<Select name='priority' defaultValue='medium'>
-										<SelectTrigger className='w-full'>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{['low', 'medium', 'high'].map(priority => (
-												<SelectItem key={priority} value={priority}>
-													{priority.charAt(0).toUpperCase() + priority.slice(1)}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div className='space-y-2'>
-									<Label htmlFor='dueDate'>Due Date</Label>
-									<Input
-										type='date'
-										name='dueDate'
-										id='dueDate'
-										className='text-sm'
-									/>
-								</div>
-								<div className='flex justify-end gap-2 pt-4'>
-									<Button type='submit' size='sm'>
-										Create Task
-									</Button>
-								</div>
-							</form>
-						</DialogContent>
-					</Dialog>
-				</div>
+									<div className='space-y-2'>
+										<Label htmlFor='assignee'>Priority</Label>
+										<Select name='priority' defaultValue='medium'>
+											<SelectTrigger className='w-full'>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{['low', 'medium', 'high'].map(priority => (
+													<SelectItem key={priority} value={priority}>
+														{priority.charAt(0).toUpperCase() +
+															priority.slice(1)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+									<div className='space-y-2'>
+										<Label htmlFor='dueDate'>Due Date</Label>
+										<Input
+											type='date'
+											name='dueDate'
+											id='dueDate'
+											className='text-sm'
+										/>
+									</div>
+									<div className='flex justify-end gap-2 pt-4'>
+										<Button type='submit' size='sm'>
+											Create Task
+										</Button>
+									</div>
+								</form>
+							</DialogContent>
+						</Dialog>
+					</div>
 
-				{/* Board Columns */}
-				<DndContext
-					sensors={sensors}
-					collisionDetection={rectIntersection}
-					onDragStart={handleDragStart}
-					onDragOver={handleDragOver}
-					onDragEnd={handleDragEnd}
-				>
-					<DragOverlay>
-						{activeTask && <TaskOverlay task={activeTask} />}
-					</DragOverlay>
+					{/* Board Columns */}
+					<DndContext
+						sensors={sensors}
+						collisionDetection={rectIntersection}
+						onDragStart={handleDragStart}
+						onDragOver={handleDragOver}
+						onDragEnd={handleDragEnd}
+					>
+						<DragOverlay>
+							{activeTask && <TaskOverlay task={activeTask} />}
+						</DragOverlay>
 
-					<div
-						className='min-h-[calc(100vh-200px)] flex flex-col lg:flex-row lg:space-x-6 lg:overflow-x-auto 
+						<div
+							className='min-h-[calc(100vh-200px)] flex flex-col lg:flex-row lg:space-x-6 lg:overflow-x-auto 
 					lg:pb-6 lg:px-2 lg:-mx-2 lg:[&::-webkit-scrollbar]:h-2 
 					lg:[&::-webkit-scrollbar-track]:bg-gray-100 
 					lg:[&::-webkit-scrollbar-thumb]:bg-gray-300 lg:[&::-webkit-scrollbar-thumb]:rounded-full 
 					space-y-4 lg:space-y-0'
-					>
-						{columns.map(column => (
-							<DroppableColumn
-								key={column.id}
-								column={column}
-								onCreateTask={handleCreateTask}
-								onEditColumn={() => {}}
-							>
-								<SortableContext
-									items={column.tasks.map(task => task.id)}
-									strategy={verticalListSortingStrategy}
+						>
+							{columns.map(column => (
+								<DroppableColumn
+									key={column.id}
+									column={column}
+									onCreateTask={handleCreateTask}
+									onEditColumn={handleEditColumn}
+									onDeleteColumn={handleDeleteColumn}
 								>
-									<div className='space-y-3'>
-										{/* Trello-like: drop indicator only in other column, at exact index */}
-										{dropTarget &&
-											dropTarget.columnId === column.id &&
-											sourceColumnId !== column.id &&
-											dropTarget.index === 0 && (
-												<div
-													className='h-10 w-full rounded-xl bg-gray-50 border opacity-80'
-													aria-hidden
-												/>
-											)}
-										{column.tasks.map((task, i) => (
-											<Fragment key={task.id}>
-												{dropTarget &&
-													dropTarget.columnId === column.id &&
-													sourceColumnId !== column.id &&
-													dropTarget.index === i + 1 && (
-														<div
-															className='h-10 w-full rounded-xl bg-gray-50 border opacity-80'
-															aria-hidden
-														/>
-													)}
-												<SortableTaskCard task={task} />
-											</Fragment>
-										))}
-									</div>
-								</SortableContext>
-							</DroppableColumn>
-						))}
+									<SortableContext
+										items={column.tasks.map(task => task.id)}
+										strategy={verticalListSortingStrategy}
+									>
+										<div className='space-y-3'>
+											{/* Trello-like: drop indicator only in other column, at exact index */}
+											{dropTarget &&
+												dropTarget.columnId === column.id &&
+												sourceColumnId !== column.id &&
+												dropTarget.index === 0 && (
+													<div
+														className='h-10 w-full rounded-xl bg-gray-50 border opacity-80'
+														aria-hidden
+													/>
+												)}
+											{column.tasks.map((task, i) => (
+												<Fragment key={task.id}>
+													{dropTarget &&
+														dropTarget.columnId === column.id &&
+														sourceColumnId !== column.id &&
+														dropTarget.index === i + 1 && (
+															<div
+																className='h-10 w-full rounded-xl bg-gray-50 border opacity-80'
+																aria-hidden
+															/>
+														)}
+													<SortableTaskCard task={task} />
+												</Fragment>
+											))}
+										</div>
+									</SortableContext>
+								</DroppableColumn>
+							))}
+
+							<div className='w-full lg:shrink-0 lg:w-80 '>
+								<Button
+									onClick={() => setIsCreatingColumn(true)}
+									variant='outline'
+									className='w-full h-full min-h-52 border-dashed border-2 border-gray-300 cursor-pointer text-gray-500 hover:text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-100'
+								>
+									<PlusIcon />
+									Add a new column
+								</Button>
+							</div>
+						</div>
+					</DndContext>
+				</main>
+			</div>
+			<Dialog open={isCreatingColumn} onOpenChange={setIsCreatingColumn}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className='text-2xl font-bold'>
+							Create a new column
+						</DialogTitle>
+						<p className='text-sm text-gray-500'>
+							Add new column to the board to organize your tasks
+						</p>
+					</DialogHeader>
+					<form className='space-y-4' onSubmit={handleCreateColumn}>
+						<div className='space-y-2'>
+							<Label className='text-sm font-semibold' htmlFor='columnTitle'>
+								Column Title
+							</Label>
+							<Input
+								type='text'
+								id='columnTitle'
+								value={newColumnTitle}
+								onChange={e => setNewColumnTitle(e.target.value)}
+								placeholder='Enter column title..'
+								required
+								className='text-sm'
+							/>
+						</div>
+						<div className='flex justify-end gap-2 pt-4'>
+							<Button
+								type='button'
+								variant='outline'
+								size='sm'
+								className='cursor-pointer'
+								onClick={() => setIsCreatingColumn(false)}
+							>
+								Cancel
+							</Button>
+							<Button type='submit' size='sm' className='cursor-pointer'>
+								Create column
+							</Button>
+						</div>
+					</form>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={isEditingColumn} onOpenChange={setIsEditingColumn}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className='text-2xl font-bold'>
+							Edit column
+						</DialogTitle>
+						<p className='text-sm text-gray-500'>
+							Update the title of the column
+						</p>
+					</DialogHeader>
+					<form className='space-y-4' onSubmit={handleUpdateColumn}>
+						<div className='space-y-2'>
+							<Label className='text-sm font-semibold' htmlFor='columnTitle'>
+								Column Title
+							</Label>
+							<Input
+								type='text'
+								id='columnTitle'
+								value={editingColumnTitle}
+								onChange={e => setEditingColumnTitle(e.target.value)}
+								placeholder='Enter column title..'
+								required
+								className='text-sm'
+							/>
+						</div>
+						<div className='flex justify-end gap-2 pt-4'>
+							<Button
+								type='button'
+								variant='outline'
+								size='sm'
+								className='cursor-pointer'
+								onClick={() => {
+									setIsEditingColumn(false);
+									setEditingColumnTitle('');
+									setEditingColumn(null);
+								}}
+							>
+								Cancel
+							</Button>
+							<Button type='submit' size='sm' className='cursor-pointer'>
+								Update column
+							</Button>
+						</div>
+					</form>
+				</DialogContent>
+			</Dialog>
+			<Dialog open={isDeletingColumn} onOpenChange={setIsDeletingColumn}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className='text-2xl font-bold text-center'>
+							Delete column
+						</DialogTitle>
+						<p className='text-sm text-gray-500 text-center'>
+							Are you sure you want to delete this column?
+						</p>
+					</DialogHeader>
+
+					<div className='flex justify-center gap-2 pt-4'>
+						<Button
+							type='button'
+							variant='outline'
+							size='lg'
+							className='cursor-pointer'
+							onClick={() => {
+								setIsDeletingColumn(false);
+								setDeletingColumn(null);
+							}}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={DeleteColumn}
+							size='lg'
+							className='cursor-pointer'
+							variant='destructive'
+						>
+							Delete
+						</Button>
 					</div>
-				</DndContext>
-			</main>
-		</div>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }
