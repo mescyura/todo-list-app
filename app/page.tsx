@@ -1,4 +1,3 @@
-'use client';
 import Navbar from '@/components/navbar';
 import {
 	CheckCircle2,
