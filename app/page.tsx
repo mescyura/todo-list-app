@@ -8,7 +8,7 @@ import {
 
 export default function Home() {
 	return (
-		<div className='min-h-screen bg-gradient-to-br from-white via-slate-50 to-slate-200 text-slate-900'>
+		<div className='min-h-screen bg-linear-to-br from-white via-slate-50 to-slate-200 text-slate-900'>
 			<Navbar />
 
 			<main className='container mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-20'>
@@ -102,7 +102,7 @@ export default function Home() {
 					</div>
 
 					<div className='relative'>
-						<div className='pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-tr from-emerald-500/15 via-sky-500/10 to-transparent blur-3xl' />
+						<div className='pointer-events-none absolute inset-0 rounded-3xl bg-linear-to-tr from-emerald-500/15 via-sky-500/10 to-transparent blur-3xl' />
 
 						<div className='relative rounded-3xl bg-white shadow-xl ring-1 ring-slate-200 overflow-hidden'>
 							<div className='border-b border-slate-100 px-4 py-3 flex items-center justify-between bg-slate-50/80'>
