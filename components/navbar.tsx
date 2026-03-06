@@ -31,11 +31,11 @@ export default function Navbar({
 	const { isSignedIn, user } = useUser();
 	const pathname = usePathname();
 
-	const [hasMounted, setHasMounted] = useState(false);
+	// const [hasMounted, setHasMounted] = useState(false);
 
-	useEffect(() => {
-		setHasMounted(true);
-	}, []);
+	// useEffect(() => {
+	// 	setHasMounted(true);
+	// }, []);
 
 	const isDashboardPage = pathname === '/dashboard';
 	const isBoardPage = pathname.startsWith('/boards/');
@@ -44,14 +44,16 @@ export default function Navbar({
 		return (
 			<header className='border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50'>
 				<div className='container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between'>
-					<div className='flex items-center space-x-2'>
-						<Codepen className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
-						<span className='text-xl sm:text-2xl font-semibold text-gray-700'>
-							Todo App
-						</span>
-					</div>
+					<Link href='/'>
+						<div className='flex items-center space-x-2'>
+							<Codepen className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
+							<span className='text-xl sm:text-2xl font-semibold text-gray-700'>
+								Todo App
+							</span>
+						</div>
+					</Link>
 					<div className='flex items-center space-x-2 sm:space-x-4'>
-						{hasMounted && <UserButton />}
+						<UserButton />
 					</div>
 				</div>
 			</header>
@@ -98,21 +100,26 @@ export default function Navbar({
 									variant='outline'
 									size='sm'
 									className={`text-xs sm:text-sm cursor-pointer ${
-										filterCount > 0 ? 'bg-gray-200 text-gray-700 border-gray-300' : ''
+										filterCount > 0
+											? 'bg-gray-200 text-gray-700 border-gray-300'
+											: ''
 									}`}
 									onClick={onFilterClick}
 								>
 									<Filter className='h-3 w-3 sm:h-4 sm:w-4' />{' '}
 									<span className='hidden sm:inline'>Filter</span>{' '}
 									{filterCount > 0 && (
-										<Badge variant={'secondary'} className='text-xs text-gray-700 border-gray-300'>
+										<Badge
+											variant={'secondary'}
+											className='text-xs text-gray-700 border-gray-300'
+										>
 											{filterCount}
 										</Badge>
 									)}
 								</Button>
 							)}
 							<div className='flex items-center space-x-2 sm:space-x-4'>
-								{hasMounted && <UserButton />}
+								<UserButton />
 							</div>
 						</div>
 					</div>
@@ -124,12 +131,14 @@ export default function Navbar({
 	return (
 		<header className='border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50'>
 			<div className='container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between'>
-				<div className='flex items-center space-x-2'>
-					<Codepen className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
-					<span className='text-xl sm:text-2xl font-semibold text-gray-700'>
-						Todo App
-					</span>
-				</div>
+				<Link href='/'>
+					<div className='flex items-center space-x-2'>
+						<Codepen className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
+						<span className='text-xl sm:text-2xl font-semibold text-gray-700'>
+							Todo App
+						</span>
+					</div>
+				</Link>
 				<div className='flex items-center space-x-2 sm:space-x-4'>
 					{isSignedIn ? (
 						<div className='flex items-center space-x-2'>
@@ -142,13 +151,13 @@ export default function Navbar({
 								Welcome,
 								{user?.firstName ?? user?.emailAddresses[0].emailAddress}
 							</span>
-							{hasMounted && <UserButton />}
+							<UserButton />
 						</div>
 					) : (
 						<div className='flex items-center space-x-2'>
 							<SignInButton>
 								<Button
-									variant='ghost'
+									variant='outline'
 									size='sm'
 									className='text-xs sm:text-sm cursor-pointer'
 								>

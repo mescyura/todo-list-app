@@ -105,7 +105,7 @@ function DroppableColumn({
 						<DialogTrigger asChild>
 							<Button
 								variant='ghost'
-								className='cursor-pointer w-full mt-3 text-gray-500 hover:text-gray-700'
+								className='w-full text-gray-500 hover:text-gray-700 cursor-pointer'
 								size='sm'
 							>
 								{' '}
@@ -886,7 +886,7 @@ export default function BoardPage() {
 										items={column.tasks.map(task => task.id)}
 										strategy={verticalListSortingStrategy}
 									>
-										<div className='space-y-3'>
+										<div className={`space-y-3 ${column.tasks.length > 0 ? 'mb-3' : ''}`}>
 											{/* Trello-like: drop indicator only in other column, at exact index */}
 											{dropTarget &&
 												dropTarget.columnId === column.id &&
