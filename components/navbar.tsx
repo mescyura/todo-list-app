@@ -1,46 +1,19 @@
 'use client';
 
-import {
-	ArrowLeft,
-	ArrowRight,
-	Codepen,
-	Filter,
-	MoreHorizontal,
-} from 'lucide-react';
+import { ArrowRight, Codepen } from 'lucide-react';
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 import { Button } from './ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Badge } from './ui/badge';
-import { useEffect, useState } from 'react';
 
-interface NavbarProps {
-	boardTitle?: string;
-	boardColor?: string;
-	onEditBoard?: () => void;
-	onFilterClick?: () => void;
-	filterCount?: number;
-}
-export default function Navbar({
-	boardTitle,
-	boardColor,
-	onEditBoard,
-	onFilterClick,
-	filterCount = 0,
-}: NavbarProps) {
+export default function Navbar() {
 	const { isSignedIn, user } = useUser();
 	const pathname = usePathname();
-
-	// const [hasMounted, setHasMounted] = useState(false);
-
-	// useEffect(() => {
-	// 	setHasMounted(true);
-	// }, []);
 
 	const isDashboardPage = pathname === '/dashboard';
 	const isBoardPage = pathname.startsWith('/boards/');
 
-	if (isDashboardPage) {
+	if (isDashboardPage || isBoardPage) {
 		return (
 			<header className='border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50'>
 				<div className='container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between'>
@@ -54,74 +27,6 @@ export default function Navbar({
 					</Link>
 					<div className='flex items-center space-x-2 sm:space-x-4'>
 						<UserButton />
-					</div>
-				</div>
-			</header>
-		);
-	}
-
-	if (isBoardPage) {
-		return (
-			<header className='border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50'>
-				<div className='container mx-auto px-4 py-3 sm:py-4'>
-					<div className='flex items-center justify-between'>
-						<div className='flex items-center space-x-2 min-w-0'>
-							<Link
-								href='/dashboard'
-								className='flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base text-gray-400 hover:text-gray-600 shrink-0 transition-colors duration-200 '
-							>
-								<ArrowLeft className='h-4 w-4 sm:h-5 sm:w-5' />
-								<span className='hidden sm:inline-block mr-0'>
-									Back to Dashboard
-								</span>
-								<span className='sm:hidden'>Back</span>
-							</Link>
-							<div className='h-4 sm:h-5 w-px bg-gray-200' />
-							<div className='flex items-center space-x-2'>
-								<Codepen className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
-								<span className='text-md font-semibold text-gray-700 truncate max-w-[80px] sm:max-w-[150px] md:max-w-[400px]'>
-									{boardTitle}
-								</span>
-								{onEditBoard && (
-									<Button
-										variant='ghost'
-										size='sm'
-										className='h-7 w-7 p-0 shrink-0'
-										onClick={onEditBoard}
-									>
-										<MoreHorizontal />
-									</Button>
-								)}
-							</div>
-						</div>
-						<div className='flex items-center space-x-2 sm:space-x-4 shrink-0'>
-							{onFilterClick && (
-								<Button
-									variant='outline'
-									size='sm'
-									className={`text-xs sm:text-sm cursor-pointer ${
-										filterCount > 0
-											? 'bg-gray-200 text-gray-700 border-gray-300'
-											: ''
-									}`}
-									onClick={onFilterClick}
-								>
-									<Filter className='h-3 w-3 sm:h-4 sm:w-4' />{' '}
-									<span className='hidden sm:inline'>Filter</span>{' '}
-									{filterCount > 0 && (
-										<Badge
-											variant={'secondary'}
-											className='text-xs text-gray-700 border-gray-300'
-										>
-											{filterCount}
-										</Badge>
-									)}
-								</Button>
-							)}
-							<div className='flex items-center space-x-2 sm:space-x-4'>
-								<UserButton />
-							</div>
-						</div>
 					</div>
 				</div>
 			</header>

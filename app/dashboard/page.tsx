@@ -284,9 +284,15 @@ export default function DashboardPage() {
 												<div
 													className={`w-4 h-4 rounded-full ${board.color}`}
 												/>
-												<Badge variant={'secondary'} className='text-xs'>
-													New
-												</Badge>
+
+												{new Date(board.created_at).getTime() >
+												Date.now() - 5 * 60 * 1000 ? (
+													<Badge variant={'secondary'} className='text-xs'>
+														New
+													</Badge>
+												) : (
+													''
+												)}
 											</div>
 										</CardHeader>
 										<CardContent>

@@ -23,7 +23,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useBoard } from '@/lib/hooks/useBoards';
 import { ColumnWithTasks, Task } from '@/lib/supabase/models';
 import {
+	ArrowLeft,
 	CalendarIcon,
+	Codepen,
+	Filter,
+	MoreHorizontal,
 	MoreHorizontalIcon,
 	PlusIcon,
 	TrashIcon,
@@ -48,7 +52,9 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useParams } from 'next/navigation';
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { UserButton } from '@clerk/nextjs';
 
 function DroppableColumn({
 	column,
@@ -352,6 +358,7 @@ export default function BoardPage() {
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 	const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
 	const [sourceColumnId, setSourceColumnId] = useState<string | null>(null);
+	const [filterCount, setFilterCount] = useState<number | null>(null);
 	const [dropTarget, setDropTarget] = useState<{
 		columnId: string;
 		index: number;
@@ -362,6 +369,16 @@ export default function BoardPage() {
 		assignee: [] as String[],
 		dueDate: null as string | null,
 	});
+
+	useEffect(() => {
+		setFilterCount(
+			Object.values(filters).reduce(
+				(count, v) =>
+					count + (Array.isArray(v) ? v.length : v !== null ? 1 : 0),
+				0
+			)
+		);
+	}, [filters]);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
@@ -661,25 +678,69 @@ export default function BoardPage() {
 	return (
 		<>
 			<div className='min-h-screen bg-gray-50'>
-				<Navbar
-					boardTitle={board?.title}
-					onEditBoard={() => {
-						setNewTitle(board?.title ?? '');
-						setNewColor(board?.color ?? '');
-						setIsEditing(true);
-					}}
-					boardColor={board?.color}
-					//TODO: Implement filter click
-					onFilterClick={() => {
-						setFilterOpen(true);
-					}}
-					//TODO: Implement filter count
-					filterCount={Object.values(filters).reduce(
-						(count, v) =>
-							count + (Array.isArray(v) ? v.length : v !== null ? 1 : 0),
-						0
-					)}
-				/>
+				<Navbar />
+				<div className='container mx-auto px-4 py-3 sm:py-4'>
+					<div className='flex items-center justify-between'>
+						<div className='flex items-center space-x-2 min-w-0'>
+							<Link
+								href='/dashboard'
+								className='flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base text-gray-400 hover:text-gray-600 shrink-0 transition-colors duration-200 '
+							>
+								<ArrowLeft className='h-4 w-4 sm:h-5 sm:w-5' />
+								<span className='hidden sm:inline-block mr-0'>
+									Back to Dashboard
+								</span>
+								<span className='sm:hidden'>Back</span>
+							</Link>
+							<div className='h-4 sm:h-5 w-px bg-gray-200' />
+							<div className='flex items-center space-x-2'>
+								<div
+									className={`h-6 w-6 sm:h-8 sm:w-8 rounded-full ${board?.color}`}
+								/>
+								<span className='text-md font-semibold text-gray-700 truncate max-w-[200px] md:max-w-[350px] lg:max-w-[600px]'>
+									{board?.title}
+								</span>
+
+								<Button
+									variant='ghost'
+									size='sm'
+									className='h-7 w-7 p-0 shrink-0'
+									onClick={() => {
+										setNewTitle(board?.title ?? '');
+										setNewColor(board?.color ?? '');
+										setIsEditing(true);
+									}}
+								>
+									<MoreHorizontal />
+								</Button>
+							</div>
+						</div>
+						<div className='flex items-center space-x-2 sm:space-x-4 shrink-0'>
+							<Button
+								variant='outline'
+								size='sm'
+								className={`text-xs sm:text-sm cursor-pointer ${
+									filterCount && filterCount > 0
+										? 'bg-gray-200 text-gray-700 border-gray-300'
+										: ''
+								}`}
+								onClick={() => {
+									setFilterOpen(true);
+								}}
+							>
+								<Filter className='h-3 w-3 sm:h-4 sm:w-4' /> <span>Filter</span>{' '}
+								{filterCount && filterCount > 0 && (
+									<Badge
+										variant={'secondary'}
+										className='text-xs text-gray-700 border-gray-300'
+									>
+										{filterCount}
+									</Badge>
+								)}
+							</Button>
+						</div>
+					</div>
+				</div>
 				<Dialog open={isEditing} onOpenChange={setIsEditing}>
 					<DialogContent className='w-[95vw] max-w-[425px] mx-auto'>
 						<DialogHeader>
