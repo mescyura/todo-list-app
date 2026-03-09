@@ -52,15 +52,11 @@ export default function Navbar() {
 									Go to Dashboard <ArrowRight />
 								</Button>
 							</Link>
-							<span className='hidden sm:block text-xs sm:text-sm text-gray-600'>
-								Welcome,
-								{user?.firstName ?? user?.emailAddresses[0].emailAddress}
-							</span>
 							<UserButton />
 						</div>
 					) : (
 						<div className='flex items-center space-x-2'>
-							<SignInButton>
+							<SignInButton forceRedirectUrl='/dashboard'>
 								<Button
 									variant='outline'
 									size='sm'
@@ -69,7 +65,7 @@ export default function Navbar() {
 									Sign In
 								</Button>
 							</SignInButton>
-							<SignUpButton>
+							<SignUpButton forceRedirectUrl='/dashboard'>
 								<Button size='sm' className='text-xs sm:text-sm cursor-pointer'>
 									Sign Up
 								</Button>
