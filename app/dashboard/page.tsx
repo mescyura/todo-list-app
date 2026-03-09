@@ -27,15 +27,20 @@ import {
 	Plus,
 	Rocket,
 	Search,
+	TrashIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
 	const { user } = useUser();
-	const { createBoard, boards, isLoading, error } = useBoards();
+	const router = useRouter();
+	const { createBoard, deleteBoard, boards, isLoading, error } = useBoards();
 	const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 	const [isFilterOpen, setIsFilterOpen] = useState(false);
+	const [isDeletingBoard, setIsDeletingBoard] = useState(false);
+	const [deletingBoard, setDeletingBoard] = useState<Board | null>(null);
 
 	const [filters, setFilters] = useState({
 		search: '',
@@ -78,12 +83,28 @@ export default function DashboardPage() {
 	}, [filters]);
 
 	const handleCreateBoard = async () => {
-		await createBoard({
+		const newBoard = await createBoard({
 			title: 'New Board',
 			description: 'Add a description for your board',
 			color: 'bg-blue-500',
 		});
+
+		if (newBoard?.id) {
+			router.push(`/boards/${newBoard.id}`);
+		}
 	};
+
+	function handleDeleteBoard(board: Board) {
+		setIsDeletingBoard(true);
+		setDeletingBoard(board);
+	}
+
+	async function DeleteBoard() {
+		if (!deletingBoard) return;
+		await deleteBoard(deletingBoard.id);
+		setIsDeletingBoard(false);
+		setDeletingBoard(null);
+	}
 
 	if (isLoading) {
 		return (
@@ -273,7 +294,9 @@ export default function DashboardPage() {
 					</div>
 					{/* Boards List */}
 					{boards.length === 0 ? (
-						<div>No boards yet</div>
+						<div className='text-center text-gray-500 text-sm sm:text-base'>
+							No boards yet
+						</div>
 					) : viewMode === 'grid' ? (
 						<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
 							{filteredBoards.map(board => (
@@ -285,14 +308,28 @@ export default function DashboardPage() {
 													className={`w-4 h-4 rounded-full ${board.color}`}
 												/>
 
-												{new Date(board.created_at).getTime() >
-												Date.now() - 5 * 60 * 1000 ? (
-													<Badge variant={'secondary'} className='text-xs'>
-														New
-													</Badge>
-												) : (
-													''
-												)}
+												<div className='flex items-center gap-2'>
+													{new Date(board.created_at).getTime() >
+													Date.now() - 5 * 60 * 1000 ? (
+														<Badge variant={'secondary'} className='text-xs'>
+															New
+														</Badge>
+													) : (
+														''
+													)}
+													<Button
+														variant='ghost'
+														size='sm'
+														className='cursor-pointer'
+														onClick={e => {
+															e.preventDefault();
+															e.stopPropagation();
+															handleDeleteBoard(board);
+														}}
+													>
+														<TrashIcon className='w-4 h-4' />
+													</Button>
+												</div>
 											</div>
 										</CardHeader>
 										<CardContent>
@@ -308,11 +345,21 @@ export default function DashboardPage() {
 													Created{' '}
 													{new Date(board.created_at).toLocaleDateString()}
 												</span>
-												<span className='flex items-center justify-center gap-0.5 text-gray-500'>
-													<History className='h-3 w-3 text-gray-800' />
-													Updated{' '}
-													{new Date(board.updated_at).toLocaleDateString()}
-												</span>
+												{board.updated_at && (
+													<span className='flex items-center justify-center gap-0.5 text-gray-500'>
+														<History className='h-3 w-3 text-gray-800' />
+														Updated{' '}
+														{(() => {
+															const d = new Date(board.updated_at);
+															const date = `${String(d.toLocaleDateString())}`;
+															const time = `${String(d.getHours()).padStart(
+																2,
+																'0'
+															)}:${String(d.getMinutes()).padStart(2, '0')}`;
+															return `${date}, ${time}`;
+														})()}
+													</span>
+												)}
 											</div>
 										</CardContent>
 									</Card>
@@ -460,6 +507,41 @@ export default function DashboardPage() {
 								Apply Filters
 							</Button>
 						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
+			<Dialog open={isDeletingBoard} onOpenChange={setIsDeletingBoard}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className='text-2xl font-bold text-center'>
+							Delete board
+						</DialogTitle>
+						<p className='text-sm text-gray-500 text-center'>
+							Are you sure you want to delete this board?
+						</p>
+					</DialogHeader>
+
+					<div className='flex justify-center gap-2 pt-4'>
+						<Button
+							type='button'
+							variant='outline'
+							size='lg'
+							className='cursor-pointer'
+							onClick={() => {
+								setIsDeletingBoard(false);
+								setDeletingBoard(null);
+							}}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={DeleteBoard}
+							size='lg'
+							className='cursor-pointer'
+							variant='destructive'
+						>
+							Delete
+						</Button>
 					</div>
 				</DialogContent>
 			</Dialog>

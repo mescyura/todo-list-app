@@ -55,14 +55,25 @@ export function useBoards() {
 				}
 			);
 			setBoards(prev => [newBoard, ...prev]);
+			return newBoard;
 		} catch (error) {
 			setError(
 				error instanceof Error ? error.message : 'Failed to create board'
 			);
+			throw error;
 		}
 	}
 
-	return { createBoard, boards, isLoading, error };
+	async function deleteBoard(boardId: string) {
+		try {
+			await boardsService.deleteBoard(supabase!, boardId);
+			setBoards(prev => prev.filter(board => board.id !== boardId));
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Failed to delete board.');
+		}
+	}
+
+	return { createBoard, deleteBoard, boards, isLoading, error };
 }
 
 export function useBoard(boardId: string) {
@@ -246,6 +257,6 @@ export function useBoard(boardId: string) {
 		moveTask,
 		createColumn,
 		updateColumn,
-		deleteColumn
+		deleteColumn,
 	};
 }

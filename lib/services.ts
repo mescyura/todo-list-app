@@ -65,6 +65,21 @@ export const boardsService = {
 
 		return data;
 	},
+
+	async deleteBoard(supabase: SupabaseClient, boardId: string) {
+		const { data, error } = await supabase
+			.from('boards')
+			.delete()
+			.eq('id', boardId)
+			.select()
+			.single();
+
+		if (error) {
+			throw new Error(error.message);
+		}
+
+		return data;
+	},
 };
 
 export const columnsService = {
