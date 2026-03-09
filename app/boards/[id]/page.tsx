@@ -357,6 +357,12 @@ export default function BoardPage() {
 		index: number;
 	} | null>(null);
 
+	const [filters, setFilters] = useState({
+		priority: [] as String[],
+		assignee: [] as String[],
+		dueDate: null as string | null,
+	});
+
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
 			activationConstraint: {
@@ -364,6 +370,43 @@ export default function BoardPage() {
 			},
 		})
 	);
+
+	function handleFIlterChange(
+		type: 'priority' | 'assignee' | 'dueDate',
+		value: string | string[] | null
+	) {
+		setFilters(prev => ({ ...prev, [type]: value }));
+	}
+
+	function clearFilters() {
+		setFilters({
+			priority: [] as String[],
+			assignee: [] as String[],
+			dueDate: null as string | null,
+		});
+	}
+
+	const filteredColumns = columns.map(column => ({
+		...column,
+		tasks: column.tasks.filter(task => {
+			// filter by priority
+			if (
+				filters.priority.length > 0 &&
+				!filters.priority.includes(task.priority)
+			) {
+				return false;
+			}
+			// filter by due date
+			if (filters.dueDate && task.due_date) {
+				const taskDate = new Date(task.due_date).toString();
+				const filtersDate = new Date(filters.dueDate).toString();
+				if (taskDate !== filtersDate) {
+					return false;
+				}
+			}
+			return true;
+		}),
+	}));
 
 	async function handleUpdateBoard(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
@@ -630,7 +673,11 @@ export default function BoardPage() {
 						setFilterOpen(true);
 					}}
 					//TODO: Implement filter count
-					filterCount={2}
+					filterCount={Object.values(filters).reduce(
+						(count, v) =>
+							count + (Array.isArray(v) ? v.length : v !== null ? 1 : 0),
+						0
+					)}
 				/>
 				<Dialog open={isEditing} onOpenChange={setIsEditing}>
 					<DialogContent className='w-[95vw] max-w-[425px] mx-auto'>
@@ -719,7 +766,26 @@ export default function BoardPage() {
 								</Label>
 								<div className='flex gap-2'>
 									{['low', 'medium', 'high'].map(priority => (
-										<Button key={priority} variant={`outline`} size='sm'>
+										<Button
+											key={priority}
+											variant={
+												filters.priority.includes(priority)
+													? 'default'
+													: 'outline'
+											}
+											size='sm'
+											onClick={() => {
+												const newPriorities = filters.priority.includes(
+													priority
+												)
+													? filters.priority.filter(p => p !== priority)
+													: [...filters.priority, priority];
+												handleFIlterChange(
+													'priority',
+													newPriorities as string[]
+												);
+											}}
+										>
 											{priority.charAt(0).toUpperCase() + priority.slice(1)}
 										</Button>
 									))}
@@ -742,10 +808,23 @@ export default function BoardPage() {
 								<Label htmlFor='priority' className='text-sm font-semibold'>
 									Due Date
 								</Label>
-								<Input type='date' id='dueDate' className='text-sm' />
+								<Input
+									type='date'
+									id='dueDate'
+									className='text-sm'
+									value={filters.dueDate || ''}
+									onChange={e =>
+										handleFIlterChange('dueDate', e.target.value || null)
+									}
+								/>
 							</div>
 							<div className='flex justify-end gap-2 pt-4'>
-								<Button type='button' variant='outline' size='sm'>
+								<Button
+									type='button'
+									variant='outline'
+									size='sm'
+									onClick={clearFilters}
+								>
 									Clear Filters
 								</Button>
 								<Button
@@ -874,7 +953,7 @@ export default function BoardPage() {
 					lg:[&::-webkit-scrollbar-thumb]:bg-gray-300 lg:[&::-webkit-scrollbar-thumb]:rounded-full 
 					space-y-4 lg:space-y-0'
 						>
-							{columns.map(column => (
+							{filteredColumns.map(column => (
 								<DroppableColumn
 									key={column.id}
 									column={column}
@@ -886,7 +965,11 @@ export default function BoardPage() {
 										items={column.tasks.map(task => task.id)}
 										strategy={verticalListSortingStrategy}
 									>
-										<div className={`space-y-3 ${column.tasks.length > 0 ? 'mb-3' : ''}`}>
+										<div
+											className={`space-y-3 ${
+												column.tasks.length > 0 ? 'mb-3' : ''
+											}`}
+										>
 											{/* Trello-like: drop indicator only in other column, at exact index */}
 											{dropTarget &&
 												dropTarget.columnId === column.id &&
