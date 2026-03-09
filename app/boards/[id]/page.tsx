@@ -133,7 +133,7 @@ function DroppableColumn({
 								<div className='space-y-2'>
 									<Label htmlFor='title'>Title *</Label>
 									<Input
-										className='text-base scale-[0.875]'
+										className='text-base  w-full'
 										type='text'
 										name='title'
 										id='title'
@@ -144,7 +144,7 @@ function DroppableColumn({
 								<div className='space-y-2'>
 									<Label htmlFor='description'>Description</Label>
 									<Textarea
-										className='text-base scale-[0.875]'
+										className='text-base  w-full'
 										name='description'
 										id='description'
 										placeholder='Enter task description..'
@@ -172,7 +172,7 @@ function DroppableColumn({
 										type='date'
 										name='dueDate'
 										id='dueDate'
-										className='text-base scale-[0.875] w-fit'
+										className='text-base  w-fit'
 									/>
 								</div>
 								<div className='flex justify-end gap-2 pt-4'>
@@ -1248,7 +1248,7 @@ export default function BoardPage() {
 									<div className='space-y-2'>
 										<Label htmlFor='title'>Title *</Label>
 										<Input
-											className='text-base scale-[0.875]'
+											className='text-base '
 											type='text'
 											name='title'
 											id='title'
@@ -1259,7 +1259,7 @@ export default function BoardPage() {
 									<div className='space-y-2'>
 										<Label htmlFor='description'>Description</Label>
 										<Textarea
-											className='text-base scale-[0.875]'
+											className='text-base '
 											name='description'
 											id='description'
 											placeholder='Enter task description..'
@@ -1299,7 +1299,7 @@ export default function BoardPage() {
 											type='date'
 											name='dueDate'
 											id='dueDate'
-											className='text-base scale-[0.875] w-fit'
+											className='text-base  w-fit'
 										/>
 									</div>
 									<div className='flex justify-end gap-2 pt-4'>
@@ -1418,7 +1418,7 @@ export default function BoardPage() {
 								onChange={e => setNewColumnTitle(e.target.value)}
 								placeholder='Enter column title..'
 								required
-								className='text-base scale-[0.875]'
+								className='text-base  w-full'
 							/>
 						</div>
 						<div className='flex justify-end gap-2 pt-4'>
@@ -1461,7 +1461,7 @@ export default function BoardPage() {
 								onChange={e => setEditingColumnTitle(e.target.value)}
 								placeholder='Enter column title..'
 								required
-								className='text-base scale-[0.875]'
+								className='text-base  w-full'
 							/>
 						</div>
 						<div className='flex justify-end gap-2 pt-4'>
