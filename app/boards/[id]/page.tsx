@@ -384,6 +384,7 @@ export default function BoardPage() {
 			assignee: [] as String[],
 			dueDate: null as string | null,
 		});
+		setFilterOpen(false);
 	}
 
 	const filteredColumns = columns.map(column => ({

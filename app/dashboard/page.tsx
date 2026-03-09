@@ -3,8 +3,16 @@ import Navbar from '@/components/navbar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useBoards } from '@/lib/hooks/useBoards';
+import { Board } from '@/lib/supabase/models';
 import { useUser } from '@clerk/nextjs';
 import {
 	CircleX,
@@ -21,12 +29,53 @@ import {
 	Search,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 export default function DashboardPage() {
 	const { user } = useUser();
 	const { createBoard, boards, isLoading, error } = useBoards();
 	const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+	const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+	const [filters, setFilters] = useState({
+		search: '',
+		dateRange: {
+			start: null as string | null,
+			end: null as string | null,
+		},
+	});
+
+	const filteredBoards = boards.filter((board: Board) => {
+		const matchesSearch = board.title
+			.toLowerCase()
+			.includes(filters.search.toLowerCase());
+
+		const matchesDateRange =
+			(!filters.dateRange.start ||
+				new Date(board.created_at) >= new Date(filters.dateRange.start)) &&
+			(!filters.dateRange.end ||
+				new Date(board.created_at) <= new Date(filters.dateRange.end));
+
+		return matchesSearch && matchesDateRange;
+	});
+
+	function clearFilters() {
+		setFilters({
+			search: '',
+			dateRange: {
+				start: null as string | null,
+				end: null as string | null,
+			},
+		});
+		setIsFilterOpen(false);
+	}
+
+	const activeFiltersCount = useMemo(() => {
+		return Object.values({
+			search: filters.search,
+			...filters.dateRange,
+		}).filter(Boolean).length;
+	}, [filters]);
 
 	const handleCreateBoard = async () => {
 		await createBoard({
@@ -69,13 +118,6 @@ export default function DashboardPage() {
 					<p className='text-gray-500 text-sm sm:text-base mb-2'>
 						Here's a quick overview of your boards.
 					</p>
-					<Button
-						className='w-full sm:w-auto text-xs sm:text-sm cursor-pointer'
-						onClick={handleCreateBoard}
-					>
-						<Plus className='h-4 w-4' />
-						Create Board
-					</Button>
 				</div>
 
 				{/* {Stats} */}
@@ -103,7 +145,7 @@ export default function DashboardPage() {
 							<div className='flex items-center justify-between gap-2'>
 								<div>
 									<p className='text-sm sm:text-base text-gray-500'>
-										Active Projects
+										Active Tasks
 									</p>
 									<p className='text-xl sm:text-3xl font-bold text-gray-700'>
 										{boards.length}
@@ -170,7 +212,7 @@ export default function DashboardPage() {
 							</p>
 						</div>
 						<div className='flex flex-col sm:flex-row items-stretch sm:items-center space-y-4 sm:space-y-0 space-x-2'>
-							<div className='flex items-center space-x-2 bg-white border p-1 rounded-lg'>
+							<div className='hidden sm:flex items-center space-x-2 bg-white border p-1 rounded-lg'>
 								<Button
 									className='cursor-pointer'
 									variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -189,11 +231,24 @@ export default function DashboardPage() {
 								</Button>
 							</div>
 							<Button
-								className='text-xs sm:text-sm cursor-pointer'
+								className={`text-xs sm:text-sm cursor-pointer ${
+									activeFiltersCount > 0
+										? 'bg-gray-200 text-gray-700 border-gray-300'
+										: ''
+								}`}
 								variant='outline'
 								size='sm'
+								onClick={() => setIsFilterOpen(true)}
 							>
-								<Filter /> Filter
+								<Filter /> <span>Filter</span>
+								{activeFiltersCount > 0 && (
+									<Badge
+										variant={'secondary'}
+										className='text-xs text-gray-700 border-gray-300'
+									>
+										{activeFiltersCount}
+									</Badge>
+								)}
 							</Button>
 							<Button
 								className='w-full sm:w-auto text-xs sm:text-sm cursor-pointer'
@@ -211,6 +266,9 @@ export default function DashboardPage() {
 							type='text'
 							placeholder='Search boards...'
 							className='pl-10'
+							onChange={e =>
+								setFilters(prev => ({ ...prev, search: e.target.value }))
+							}
 						/>
 					</div>
 					{/* Boards List */}
@@ -218,7 +276,7 @@ export default function DashboardPage() {
 						<div>No boards yet</div>
 					) : viewMode === 'grid' ? (
 						<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
-							{boards.map(board => (
+							{filteredBoards.map(board => (
 								<Link href={`/boards/${board.id}`} key={board.id}>
 									<Card className='hover:shadow-lg transition-shadow duration-300 cursor-pointer group'>
 										<CardHeader className='pb-3'>
@@ -265,7 +323,7 @@ export default function DashboardPage() {
 						</div>
 					) : (
 						<div className='flex flex-col gap-4'>
-							{boards.map(board => (
+							{filteredBoards.map(board => (
 								<Link href={`/boards/${board.id}`} key={board.id}>
 									<Card className='hover:shadow-lg transition-shadow duration-300 cursor-pointer group'>
 										<CardHeader className='pb-3'>
@@ -313,6 +371,92 @@ export default function DashboardPage() {
 					)}
 				</div>
 			</main>
+
+			{/* Filter dialog */}
+			<Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+				<DialogContent className='w-[95vw] max-w-[425px] mx-auto'>
+					<DialogHeader>
+						<DialogTitle className='text-2xl font-bold'>
+							Filter Boards
+						</DialogTitle>
+						<p className='text-sm text-gray-500'>
+							Filter boards by title, date or tasks count
+						</p>
+					</DialogHeader>
+					<div className='space-y-4'>
+						<div className='space-y-2'>
+							<Label htmlFor='search'>Search</Label>
+							<Input
+								className='text-sm'
+								id='search'
+								name='search'
+								type='text'
+								placeholder='Search boards...'
+								onChange={e =>
+									setFilters(prev => ({ ...prev, search: e.target.value }))
+								}
+							/>
+						</div>
+						<div className='space-y-2'>
+							<Label>Date range</Label>
+							<div className='grid grid-cols-2 gap-2'>
+								<div className='space-y-2'>
+									<Label className='text-xs text-gray-600'>From</Label>
+									<Input
+										className='text-sm'
+										type='date'
+										value={filters.dateRange.start || ''}
+										onChange={e =>
+											setFilters(prev => ({
+												...prev,
+												dateRange: {
+													...prev.dateRange,
+													start: e.target.value || null,
+												},
+											}))
+										}
+									/>
+								</div>
+								<div className='space-y-2'>
+									<Label className='text-xs text-gray-600'>To</Label>
+									<Input
+										className='text-sm'
+										type='date'
+										value={filters.dateRange.end || ''}
+										onChange={e =>
+											setFilters(prev => ({
+												...prev,
+												dateRange: {
+													...prev.dateRange,
+													end: e.target.value || null,
+												},
+											}))
+										}
+									/>
+								</div>
+							</div>
+						</div>
+
+						<div className='flex justify-end gap-2 pt-4'>
+							<Button
+								type='button'
+								variant='outline'
+								size='sm'
+								onClick={clearFilters}
+							>
+								Clear Filters
+							</Button>
+							<Button
+								type='submit'
+								size='sm'
+								onClick={() => setIsFilterOpen(false)}
+							>
+								Apply Filters
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
