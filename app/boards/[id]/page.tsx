@@ -471,7 +471,7 @@ function SortableTaskCard({
 							<p className='text-xs uppercase text-gray-400'>Created at</p>
 							<p className='text-gray-700 flex items-center gap-1'>
 								<CalendarIcon className='w-4 h-4 text-gray-500' />
-								{new Date(task.created_at).toLocaleDateString()}
+								{task.created_at?.slice(0, 10)}
 							</p>
 						</div>
 
@@ -521,7 +521,7 @@ function SortableTaskCard({
 									<p className='text-gray-700 flex items-center gap-1'>
 										<CalendarIcon className='w-4 h-4 text-gray-500' />
 										{task.due_date
-											? new Date(task.due_date).toLocaleDateString()
+											? task.due_date.slice(0, 10)
 											: 'No due date'}
 									</p>
 								</button>
@@ -1027,7 +1027,7 @@ export default function BoardPage() {
 								<div
 									className={`h-6 w-6 sm:h-8 sm:w-8 rounded-full ${board?.color}`}
 								/>
-								<span className='text-md font-semibold text-gray-700 truncate max-w-[200px] md:max-w-[350px] lg:max-w-[600px]'>
+								<span className='text-md font-semibold text-gray-700 truncate max-w-[150px] md:max-w-[350px] lg:max-w-[600px]'>
 									{board?.title}
 								</span>
 
@@ -1058,7 +1058,7 @@ export default function BoardPage() {
 									setFilterOpen(true);
 								}}
 							>
-								<Filter className='h-3 w-3 sm:h-4 sm:w-4' /> <span>Filter</span>{' '}
+								<Filter className='h-3 w-3 sm:h-4 sm:w-4' /> <span className='hidden sm:inline'>Filter</span>{' '}
 								{filterCount && filterCount > 0 && (
 									<Badge
 										variant={'secondary'}
