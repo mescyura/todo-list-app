@@ -185,7 +185,7 @@ function DroppableColumn({
 										type='date'
 										name='dueDate'
 										id='dueDate'
-										className='text-sm'
+										className='text-sm w-fit'
 									/>
 								</div>
 								<div className='flex justify-end gap-2 pt-4'>
@@ -1313,7 +1313,7 @@ export default function BoardPage() {
 											type='date'
 											name='dueDate'
 											id='dueDate'
-											className='text-sm'
+											className='text-sm w-fit'
 										/>
 									</div>
 									<div className='flex justify-end gap-2 pt-4'>
