@@ -118,7 +118,7 @@ export default function Home() {
 							</div>
 
 							<div className='px-4 py-4 bg-slate-50/60'>
-								<div className='grid grid-cols-3 gap-3 text-xs'>
+								<div className='grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs'>
 									<div className='rounded-2xl bg-white/90 p-3 shadow-sm border border-slate-100'>
 										<div className='mb-2 flex items-center justify-between gap-2'>
 											<span className='text-[11px] font-semibold text-slate-700'>
