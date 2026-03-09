@@ -133,7 +133,7 @@ function DroppableColumn({
 								<div className='space-y-2'>
 									<Label htmlFor='title'>Title *</Label>
 									<Input
-										className='text-sm'
+										className='text-base scale-[0.875]'
 										type='text'
 										name='title'
 										id='title'
@@ -144,24 +144,13 @@ function DroppableColumn({
 								<div className='space-y-2'>
 									<Label htmlFor='description'>Description</Label>
 									<Textarea
-										className='text-sm'
+										className='text-base scale-[0.875]'
 										name='description'
 										id='description'
 										placeholder='Enter task description..'
 										rows={3}
 									/>
 								</div>
-								{/* <div className='space-y-2'>
-									<Label htmlFor='assignee'>Assignee</Label>
-									<Input
-										className='text-sm'
-										type='text'
-										name='assignee'
-										id='assignee'
-										// required
-										placeholder='Enter assignee name..'
-									/>
-								</div> */}
 								<div className='space-y-2'>
 									<Label htmlFor='assignee'>Priority</Label>
 									<Select name='priority' defaultValue='medium'>
@@ -183,7 +172,7 @@ function DroppableColumn({
 										type='date'
 										name='dueDate'
 										id='dueDate'
-										className='text-sm w-fit'
+										className='text-base scale-[0.875] w-fit'
 									/>
 								</div>
 								<div className='flex justify-end gap-2 pt-4'>
@@ -1259,7 +1248,7 @@ export default function BoardPage() {
 									<div className='space-y-2'>
 										<Label htmlFor='title'>Title *</Label>
 										<Input
-											className='text-sm'
+											className='text-base scale-[0.875]'
 											type='text'
 											name='title'
 											id='title'
@@ -1270,7 +1259,7 @@ export default function BoardPage() {
 									<div className='space-y-2'>
 										<Label htmlFor='description'>Description</Label>
 										<Textarea
-											className='text-sm'
+											className='text-base scale-[0.875]'
 											name='description'
 											id='description'
 											placeholder='Enter task description..'
@@ -1310,7 +1299,7 @@ export default function BoardPage() {
 											type='date'
 											name='dueDate'
 											id='dueDate'
-											className='text-sm w-fit'
+											className='text-base scale-[0.875] w-fit'
 										/>
 									</div>
 									<div className='flex justify-end gap-2 pt-4'>
@@ -1429,7 +1418,7 @@ export default function BoardPage() {
 								onChange={e => setNewColumnTitle(e.target.value)}
 								placeholder='Enter column title..'
 								required
-								className='text-sm'
+								className='text-base scale-[0.875]'
 							/>
 						</div>
 						<div className='flex justify-end gap-2 pt-4'>
@@ -1472,7 +1461,7 @@ export default function BoardPage() {
 								onChange={e => setEditingColumnTitle(e.target.value)}
 								placeholder='Enter column title..'
 								required
-								className='text-sm'
+								className='text-base scale-[0.875]'
 							/>
 						</div>
 						<div className='flex justify-end gap-2 pt-4'>
