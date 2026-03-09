@@ -25,7 +25,6 @@ import { ColumnWithTasks, Task } from '@/lib/supabase/models';
 import {
 	ArrowLeft,
 	CalendarIcon,
-	Codepen,
 	Filter,
 	MoreHorizontal,
 	MoreHorizontalIcon,
@@ -54,7 +53,6 @@ import { CSS } from '@dnd-kit/utilities';
 import { useParams } from 'next/navigation';
 import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { UserButton } from '@clerk/nextjs';
 
 function DroppableColumn({
 	column,
@@ -520,9 +518,7 @@ function SortableTaskCard({
 								>
 									<p className='text-gray-700 flex items-center gap-1'>
 										<CalendarIcon className='w-4 h-4 text-gray-500' />
-										{task.due_date
-											? task.due_date.slice(0, 10)
-											: 'No due date'}
+										{task.due_date ? task.due_date.slice(0, 10) : 'No due date'}
 									</p>
 								</button>
 							)}
@@ -1058,7 +1054,8 @@ export default function BoardPage() {
 									setFilterOpen(true);
 								}}
 							>
-								<Filter className='h-3 w-3 sm:h-4 sm:w-4' /> <span className='hidden sm:inline'>Filter</span>{' '}
+								<Filter className='h-3 w-3 sm:h-4 sm:w-4' />{' '}
+								<span className='hidden sm:inline'>Filter</span>{' '}
 								{filterCount && filterCount > 0 && (
 									<Badge
 										variant={'secondary'}
