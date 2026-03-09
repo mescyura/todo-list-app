@@ -15,6 +15,7 @@ import { useBoards } from '@/lib/hooks/useBoards';
 import { Board } from '@/lib/supabase/models';
 import { useUser } from '@clerk/nextjs';
 import {
+	CircleCheckBig,
 	CircleX,
 	Clock9,
 	Codepen,
@@ -161,23 +162,7 @@ export default function DashboardPage() {
 							</div>
 						</CardContent>
 					</Card>
-					<Card>
-						<CardContent className='p-4 sm:p-6'>
-							<div className='flex items-center justify-between gap-2'>
-								<div>
-									<p className='text-sm sm:text-base text-gray-500'>
-										Active Tasks
-									</p>
-									<p className='text-xl sm:text-3xl font-bold text-gray-700'>
-										{boards.length}
-									</p>
-								</div>
-								<div className='h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center bg-green-100 rounded-lg p-2'>
-									<Rocket className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
-								</div>
-							</div>
-						</CardContent>
-					</Card>
+
 					<Card>
 						<CardContent className='p-4 sm:p-6'>
 							<div className='flex items-center justify-between gap-2'>
@@ -188,10 +173,11 @@ export default function DashboardPage() {
 									<p className='text-xl sm:text-3xl font-bold text-gray-700'>
 										{
 											boards.filter(board => {
-												const updatetAt = new Date(board.updated_at);
+												const updatedAt = new Date(board.updated_at);
+												const createdAt = new Date(board.created_at);
 												const oneWeekAgo = new Date();
 												oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-												return updatetAt > oneWeekAgo;
+												return updatedAt > oneWeekAgo || createdAt > oneWeekAgo;
 											}).length
 										}
 									</p>
@@ -207,14 +193,31 @@ export default function DashboardPage() {
 							<div className='flex items-center justify-between gap-2'>
 								<div>
 									<p className='text-sm sm:text-base text-gray-500'>
-										// TODO LATER
+										Total Tasks // TODO
 									</p>
 									<p className='text-xl sm:text-3xl font-bold text-gray-700'>
 										{boards.length}
 									</p>
 								</div>
-								<div className='h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center bg-gray-100 rounded-lg p-2'>
-									<Codepen className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
+								<div className='h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center bg-red-100 rounded-lg p-2'>
+									<Rocket className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className='p-4 sm:p-6'>
+							<div className='flex items-center justify-between gap-2'>
+								<div>
+									<p className='text-sm sm:text-base text-gray-500'>
+										Done tasks // TODO 
+									</p>
+									<p className='text-xl sm:text-3xl font-bold text-gray-700'>
+										{boards.length}
+									</p>
+								</div>
+								<div className='h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center bg-green-100 rounded-lg p-2'>
+									<CircleCheckBig className='h-6 w-6 sm:h-8 sm:w-8 text-gray-700' />
 								</div>
 							</div>
 						</CardContent>
