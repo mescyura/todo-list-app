@@ -345,7 +345,7 @@ function SortableTaskCard({
 					setIsEditingPriority(false);
 				}}
 				onEscapeKeyDown={e => e.preventDefault()}
-				className={`w-[95vw] max-w-[480px] mx-auto overflow-y-scroll max-h-screen border-l-5 ${
+				className={`w-[95vw] max-w-[480px] mx-auto overflow-y-scroll max-h-[90dvh] border-l-5 ${
 					task.priority === 'low'
 						? 'border-l-green-500'
 						: task.priority === 'medium'
