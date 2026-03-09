@@ -291,7 +291,7 @@ export default function DashboardPage() {
 							placeholder='Search boards...'
 							className='pl-10'
 							onChange={e =>
-								setFilters(prev => ({ ...prev, search: e.target.value }))
+								setFilters(prev => ({ ...prev, search: e.target.value.trim() }))
 							}
 						/>
 					</div>
@@ -449,7 +449,7 @@ export default function DashboardPage() {
 								type='text'
 								placeholder='Search boards...'
 								onChange={e =>
-									setFilters(prev => ({ ...prev, search: e.target.value }))
+									setFilters(prev => ({ ...prev, search: e.target.value.trim() }))
 								}
 							/>
 						</div>

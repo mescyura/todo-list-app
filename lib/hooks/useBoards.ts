@@ -198,6 +198,25 @@ export function useBoard(boardId: string) {
 		}
 	}
 
+	async function updateTask(taskId: string, updates: Partial<Task>) {
+		try {
+			const updated = await taskService.updateTask(supabase!, taskId, updates);
+
+			setColumns(prev =>
+				prev.map(column => ({
+					...column,
+					tasks: column.tasks.map(task =>
+						task.id === taskId ? { ...task, ...updated } : task
+					),
+				}))
+			);
+
+			return updated;
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Failed to update task.');
+		}
+	}
+
 	async function createColumn(columnTitle: string) {
 		if (!board || !user) throw new Error('Board not loaded');
 		try {
@@ -255,6 +274,7 @@ export function useBoard(boardId: string) {
 		updateBoard,
 		createRealTask,
 		moveTask,
+		updateTask,
 		createColumn,
 		updateColumn,
 		deleteColumn,

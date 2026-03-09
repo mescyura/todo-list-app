@@ -202,7 +202,18 @@ function DroppableColumn({
 	);
 }
 
-function SortableTaskCard({ task }: { task: Task }) {
+function SortableTaskCard({
+	task,
+	onUpdateTask,
+}: {
+	task: Task;
+	onUpdateTask: (
+		taskId: string,
+		updates: Partial<
+			Pick<Task, 'title' | 'description' | 'due_date' | 'priority'>
+		>
+	) => Promise<Task | void | undefined>;
+}) {
 	const {
 		attributes,
 		listeners,
@@ -231,44 +242,362 @@ function SortableTaskCard({ task }: { task: Task }) {
 		}
 	}
 
-	return (
-		<div ref={setNodeRef} style={styles} {...attributes} {...listeners}>
-			<Card className='cursor-pointer hover:shadow-md transition-shadow'>
-				<CardContent className='p-3 sm:p-4'>
-					<div className='space-y-2 sm:space-y-3'>
-						<div className='flex items-start justify-between'>
-							<h4 className='font-medium text-gray-900 text-md leading-tight flex-1 min-w-0 pr-2'>
-								{task.title}
-							</h4>
-						</div>
-						<p className='text-sm text-gray-500 line-clamp-2'>
-							{task.description || 'No description'}
-						</p>
+	const [isEditingTitle, setIsEditingTitle] = useState(false);
+	const [isEditingDescription, setIsEditingDescription] = useState(false);
+	const [isEditingDueDate, setIsEditingDueDate] = useState(false);
+	const [isEditingPriority, setIsEditingPriority] = useState(false);
 
-						<div className='flex items-center justify-between gap-2'>
-							<div className='flex items-center justify-between flex-wrap space-x-3 sm:space-x-4 sm:space-y-1 min-w-0'>
-								{task.assignee && (
-									<div className='flex items-center gap-1 text-xs text-gray-500'>
-										<UserIcon className='w-4 h-4' />
-										<span className='text-xs truncate'>{task.assignee}</span>
+	const [draftTitle, setDraftTitle] = useState(task.title);
+	const [draftDescription, setDraftDescription] = useState(
+		task.description || ''
+	);
+	const [draftDueDate, setDraftDueDate] = useState(
+		task.due_date ? task.due_date.split('T')[0] : ''
+	);
+	const [draftPriority, setDraftPriority] = useState<Task['priority']>(
+		task.priority
+	);
+
+	async function saveField(
+		field: 'title' | 'description' | 'due_date' | 'priority'
+	) {
+		const updates: Partial<Task> = {};
+		if (field === 'title') updates.title = draftTitle.trim();
+		if (field === 'description') updates.description = draftDescription || null;
+		if (field === 'due_date')
+			updates.due_date = draftDueDate ? draftDueDate : null;
+		if (field === 'priority') updates.priority = draftPriority;
+
+		await onUpdateTask(task.id, updates);
+
+		if (field === 'title') setIsEditingTitle(false);
+		if (field === 'description') setIsEditingDescription(false);
+		if (field === 'due_date') setIsEditingDueDate(false);
+		if (field === 'priority') setIsEditingPriority(false);
+	}
+
+	function cancelField(
+		field: 'title' | 'description' | 'due_date' | 'priority'
+	) {
+		if (field === 'title') {
+			setDraftTitle(task.title);
+			setIsEditingTitle(false);
+		}
+		if (field === 'description') {
+			setDraftDescription(task.description || '');
+			setIsEditingDescription(false);
+		}
+		if (field === 'due_date') {
+			setDraftDueDate(task.due_date ? task.due_date.split('T')[0] : '');
+			setIsEditingDueDate(false);
+		}
+		if (field === 'priority') {
+			setDraftPriority(task.priority);
+			setIsEditingPriority(false);
+		}
+	}
+
+	return (
+		<Dialog>
+			<div ref={setNodeRef} style={styles} {...attributes} {...listeners}>
+				<DialogTrigger asChild>
+					<Card
+						className={`cursor-pointer hover:shadow-md transition-shadow border-l-5 ${
+							task.priority === 'low'
+								? 'border-l-green-500'
+								: task.priority === 'medium'
+								? 'border-l-yellow-500'
+								: 'border-l-red-500'
+						}`}
+					>
+						<CardContent className='p-3 sm:p-4'>
+							<div className='space-y-2 sm:space-y-3'>
+								<div className='flex items-start justify-between'>
+									<h4 className='font-medium text-gray-900 text-md leading-tight flex-1 min-w-0 pr-2 line-clamp-2'>
+										{task.title}
+									</h4>
+								</div>
+								<p className='text-sm text-gray-500 line-clamp-2'>
+									{task.description || 'No description'}
+								</p>
+
+								<div className='flex items-center justify-between gap-2'>
+									<div className='flex items-center justify-between flex-wrap space-x-3 sm:space-x-4 sm:space-y-1 min-w-0'>
+										{task.assignee && (
+											<div className='flex items-center gap-1 text-xs text-gray-500'>
+												<UserIcon className='w-4 h-4' />
+												<span className='text-xs truncate'>
+													{task.assignee}
+												</span>
+											</div>
+										)}
+										{task.due_date && (
+											<div className='flex items-center gap-1 text-xs text-gray-500'>
+												<CalendarIcon className='w-4 h-4' />
+												<span className='text-xs truncate'>
+													{task.due_date}
+												</span>
+											</div>
+										)}
 									</div>
-								)}
-								{task.due_date && (
-									<div className='flex items-center gap-1 text-xs text-gray-500'>
-										<CalendarIcon className='w-4 h-4' />
-										<span className='text-xs truncate'>{task.due_date}</span>
-									</div>
-								)}
+									<div
+										className={`w-3 h-3 rounded-full shrink-0 
+												${getPriorityColor(task.priority)}`}
+									/>
+								</div>
 							</div>
-							<div
-								className={`w-3 h-3 rounded-full shrink-0 
-										${getPriorityColor(task.priority)}`}
-							/>
+						</CardContent>
+					</Card>
+				</DialogTrigger>
+			</div>
+			<DialogContent
+				onInteractOutside={e => {
+					setIsEditingTitle(false);
+					setIsEditingDescription(false);
+					setIsEditingDueDate(false);
+					setIsEditingPriority(false);
+				}}
+				onEscapeKeyDown={e => e.preventDefault()}
+				className={`w-[95vw] max-w-[480px] mx-auto my-6 sm:my-10 max-h-[calc(100vh-3rem)] overflow-y-auto border-l-5 ${
+					task.priority === 'low'
+						? 'border-l-green-500'
+						: task.priority === 'medium'
+						? 'border-l-yellow-500'
+						: 'border-l-red-500'
+				}`}
+			>
+				<DialogHeader className='hidden'>
+					<DialogTitle className='text-lg font-semibold text-left'>
+						{task.title}
+					</DialogTitle>
+				</DialogHeader>
+				<div className='space-y-3 text-sm'>
+					{/* Title */}
+					<div>
+						<p className='text-xs uppercase text-gray-400 mb-1'>Title</p>
+						{isEditingTitle ? (
+							<div className='space-y-2'>
+								<Input
+									className='text-sm'
+									value={draftTitle}
+									onChange={e => setDraftTitle(e.target.value)}
+									autoFocus
+								/>
+								<div className='flex gap-2'>
+									<Button
+										size='xs'
+										className='cursor-pointer'
+										onClick={() => saveField('title')}
+									>
+										Save
+									</Button>
+									<Button
+										variant='outline'
+										size='xs'
+										className='cursor-pointer'
+										onClick={() => cancelField('title')}
+									>
+										Cancel
+									</Button>
+								</div>
+							</div>
+						) : (
+							<button
+								type='button'
+								className='text-left w-full'
+								onClick={() => {
+									setIsEditingTitle(true);
+									setIsEditingDescription(false);
+									setIsEditingDueDate(false);
+									setIsEditingPriority(false);
+								}}
+							>
+								<h4 className='text-lg font-semibold'>{task.title}</h4>
+							</button>
+						)}
+					</div>
+
+					{/* Description */}
+					<div>
+						<p className='text-xs uppercase text-gray-400 mb-1'>Description</p>
+						{isEditingDescription ? (
+							<div className='space-y-2'>
+								<Textarea
+									className='text-sm'
+									value={draftDescription}
+									onChange={e => setDraftDescription(e.target.value)}
+									rows={4}
+									autoFocus
+								/>
+								<div className='flex gap-2'>
+									<Button
+										size='xs'
+										className='cursor-pointer'
+										onClick={() => saveField('description')}
+									>
+										Save
+									</Button>
+									<Button
+										variant='outline'
+										size='xs'
+										className='cursor-pointer'
+										onClick={() => cancelField('description')}
+									>
+										Cancel
+									</Button>
+								</div>
+							</div>
+						) : (
+							<button
+								type='button'
+								className='w-full text-left'
+								onClick={() => {
+									setIsEditingDescription(true);
+									setIsEditingTitle(false);
+									setIsEditingDueDate(false);
+									setIsEditingPriority(false);
+								}}
+							>
+								<p className='text-gray-700 whitespace-pre-wrap'>
+									{task.description || 'No description'}
+								</p>
+							</button>
+						)}
+					</div>
+
+					<div className='grid grid-cols-2 gap-4'>
+						{/* Created at (readonly) */}
+						<div className='space-y-1'>
+							<p className='text-xs uppercase text-gray-400'>Created at</p>
+							<p className='text-gray-700 flex items-center gap-1'>
+								<CalendarIcon className='w-4 h-4 text-gray-500' />
+								{new Date(task.created_at).toLocaleDateString()}
+							</p>
+						</div>
+
+						{/* Due date editable */}
+						<div className='space-y-1'>
+							<p className='text-xs uppercase text-gray-400'>Due date</p>
+							{isEditingDueDate ? (
+								<div className='space-y-2'>
+									<div className='flex items-center gap-2'>
+										<Input
+											type='date'
+											className='text-sm'
+											value={draftDueDate}
+											onChange={e => setDraftDueDate(e.target.value)}
+											autoFocus
+										/>
+									</div>
+									<div className='flex gap-2'>
+										<Button
+											size='xs'
+											className='cursor-pointer'
+											onClick={() => saveField('due_date')}
+										>
+											Save
+										</Button>
+										<Button
+											variant='outline'
+											size='xs'
+											className='cursor-pointer'
+											onClick={() => cancelField('due_date')}
+										>
+											Cancel
+										</Button>
+									</div>
+								</div>
+							) : (
+								<button
+									type='button'
+									className='w-full text-left'
+									onClick={() => {
+										setIsEditingDueDate(true);
+										setIsEditingTitle(false);
+										setIsEditingDescription(false);
+										setIsEditingPriority(false);
+									}}
+								>
+									<p className='text-gray-700 flex items-center gap-1'>
+										<CalendarIcon className='w-4 h-4 text-gray-500' />
+										{task.due_date
+											? new Date(task.due_date).toLocaleDateString()
+											: 'No due date'}
+									</p>
+								</button>
+							)}
 						</div>
 					</div>
-				</CardContent>
-			</Card>
-		</div>
+
+					{/* Priority editable */}
+					<div className='space-y-1'>
+						<p className='text-xs uppercase text-gray-400'>Priority</p>
+						{isEditingPriority ? (
+							<div className='space-y-2'>
+								<Select
+									value={draftPriority}
+									onValueChange={value =>
+										setDraftPriority(value as Task['priority'])
+									}
+								>
+									<SelectTrigger className='w-full text-sm' autoFocus>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{['low', 'medium', 'high'].map(priority => (
+											<SelectItem key={priority} value={priority}>
+												{priority.charAt(0).toUpperCase() + priority.slice(1)}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<div className='flex gap-2'>
+									<Button
+										size='xs'
+										className='cursor-pointer'
+										onClick={() => saveField('priority')}
+									>
+										Save
+									</Button>
+									<Button
+										variant='outline'
+										size='xs'
+										className='cursor-pointer'
+										onClick={() => cancelField('priority')}
+									>
+										Cancel
+									</Button>
+								</div>
+							</div>
+						) : (
+							<button
+								type='button'
+								className='inline-flex items-center gap-2 px-2 py-1 rounded-full bg-gray-50 border text-xs'
+								onClick={() => {
+									setIsEditingPriority(true);
+									setIsEditingTitle(false);
+									setIsEditingDescription(false);
+									setIsEditingDueDate(false);
+								}}
+							>
+								<span
+									className={`w-2 h-2 rounded-full ${getPriorityColor(
+										task.priority
+									)}`}
+								/>
+								<span className='capitalize'>{task.priority}</span>
+							</button>
+						)}
+					</div>
+					<p className='text-xs text-gray-500'>
+						you can edit the field just by clicking on it
+					</p>
+					<p className='text-sm text-gray-500'>
+						Editable fields: title, description, due date, priority
+					</p>
+				</div>
+			</DialogContent>
+		</Dialog>
 	);
 }
 
@@ -339,6 +668,7 @@ export default function BoardPage() {
 		createColumn,
 		updateColumn,
 		deleteColumn,
+		updateTask,
 	} = useBoard(id);
 	const [isEditing, setIsEditing] = useState(false);
 	const [newTitle, setNewTitle] = useState('');
@@ -1053,7 +1383,12 @@ export default function BoardPage() {
 																aria-hidden
 															/>
 														)}
-													<SortableTaskCard task={task} />
+													<SortableTaskCard
+														task={task}
+														onUpdateTask={(taskId, updates) =>
+															updateTask(taskId, updates)
+														}
+													/>
 												</Fragment>
 											))}
 										</div>

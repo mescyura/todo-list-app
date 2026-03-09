@@ -199,6 +199,37 @@ export const taskService = {
 		if (error) throw error;
 		return data;
 	},
+
+	async updateTask(
+		supabase: SupabaseClient,
+		taskId: string,
+		taskData: Partial<Task>
+	): Promise<Task> {
+		// Only send explicitly provided fields to avoid schema/type issues
+		const payload: Partial<Task> = {};
+		if (typeof taskData.title !== 'undefined') payload.title = taskData.title;
+		if (typeof taskData.description !== 'undefined')
+			payload.description = taskData.description;
+		if (typeof taskData.assignee !== 'undefined')
+			payload.assignee = taskData.assignee;
+		if (typeof taskData.due_date !== 'undefined')
+			payload.due_date = taskData.due_date;
+		if (typeof taskData.priority !== 'undefined')
+			payload.priority = taskData.priority;
+
+		const { data, error } = await supabase
+			.from('tasks')
+			.update(payload)
+			.eq('id', taskId)
+			.select()
+			.single();
+
+		if (error) {
+			throw new Error(error.message);
+		}
+
+		return data;
+	},
 };
 
 export const boardDataService = {
